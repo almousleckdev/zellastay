@@ -13,3 +13,7 @@ updates:
     directory: /backend
     schedule:
       interval: weekly
+    ignore:
+      # The Java version is a project decision (ADR-21, Java 21 toolchain), not an automatic update.
+      - dependency-name: eclipse-temurin
+        update-types: ["version-update:semver-major"]
