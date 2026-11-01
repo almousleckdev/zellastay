@@ -22,7 +22,13 @@ final class ArchitectureRules {
 
   private ArchitectureRules() {}
 
+  static final String MEDIA_SDK_PACKAGE = "com.cloudinary..";
+
   static Map<String, ArchRule> forBasePackage(String base) {
+    return forBasePackage(base, MEDIA_SDK_PACKAGE);
+  }
+
+  static Map<String, ArchRule> forBasePackage(String base, String mediaSdkPackage) {
     String domain = base + "..domain..";
     String application = base + "..application..";
     String infrastructure = base + "..infrastructure..";
@@ -137,6 +143,11 @@ final class ArchitectureRules {
     rules.put(
         "no generic exceptions thrown",
         GeneralCodingRules.NO_CLASSES_SHOULD_THROW_GENERIC_EXCEPTIONS);
+
+    rules.putAll(ErrorHandlingRules.forBasePackage(base));
+    rules.put(
+        "media provider SDK is confined to media infrastructure",
+        ErrorHandlingRules.vendorSdkOnlyInMediaInfrastructure(base, mediaSdkPackage));
 
     return rules;
   }

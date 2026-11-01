@@ -13,6 +13,7 @@ class ArchitectureRulesDetectViolationsTest {
 
   private static final String VIOLATING = "archfixtures.violating";
   private static final String CLEAN = "archfixtures.clean";
+  private static final String SDK = "archfixtures.sdk..";
 
   private static final JavaClasses VIOLATING_CLASSES =
       new ClassFileImporter().importPackages(VIOLATING);
@@ -20,7 +21,7 @@ class ArchitectureRulesDetectViolationsTest {
 
   @Test
   void everyRuleFlagsItsViolatingFixture() {
-    Map<String, ArchRule> rules = ArchitectureRules.forBasePackage(VIOLATING);
+    Map<String, ArchRule> rules = ArchitectureRules.forBasePackage(VIOLATING, SDK);
 
     rules.forEach(
         (name, rule) ->
@@ -38,7 +39,7 @@ class ArchitectureRulesDetectViolationsTest {
 
   @Test
   void cleanFixturePassesEveryRule() {
-    ArchitectureRules.forBasePackage(CLEAN)
+    ArchitectureRules.forBasePackage(CLEAN, SDK)
         .forEach(
             (name, rule) ->
                 assertThatCode(() -> rule.check(CLEAN_CLASSES))
