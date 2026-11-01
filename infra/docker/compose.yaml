@@ -1,0 +1,62 @@
+name: zellastay
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${ZS_DB_NAME:?set ZS_DB_NAME in infra/docker/.env}
+      POSTGRES_USER: ${ZS_DB_USER:?set ZS_DB_USER in infra/docker/.env}
+      POSTGRES_PASSWORD: ${ZS_DB_PASSWORD:?set ZS_DB_PASSWORD in infra/docker/.env}
+    ports:
+      - "127.0.0.1:${ZS_DB_HOST_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["sh", "-c", "exec redis-server --requirepass \"$${ZS_REDIS_PASSWORD}\""]
+    environment:
+      ZS_REDIS_PASSWORD: ${ZS_REDIS_PASSWORD:?set ZS_REDIS_PASSWORD in infra/docker/.env}
+    ports:
+      - "127.0.0.1:${ZS_REDIS_HOST_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${ZS_REDIS_PASSWORD}\" --no-auth-warning ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    profiles: ["app"]
+    build:
+      context: ../../backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      ZS_ENVIRONMENT: ${ZS_ENVIRONMENT:?set ZS_ENVIRONMENT in infra/docker/.env}
+      ZS_DB_URL: jdbc:postgresql://postgres:5432/${ZS_DB_NAME}
+      ZS_DB_USER: ${ZS_DB_USER}
+      ZS_DB_PASSWORD: ${ZS_DB_PASSWORD}
+      ZS_REDIS_HOST: redis
+      ZS_REDIS_PORT: "6379"
+      ZS_REDIS_PASSWORD: ${ZS_REDIS_PASSWORD}
+    ports:
+      - "127.0.0.1:${ZS_SERVER_PORT:-8080}:8080"
+      - "127.0.0.1:${ZS_MANAGEMENT_PORT:-8081}:8081"
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+volumes:
+  postgres-data:

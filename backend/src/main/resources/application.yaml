@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: zellastay
+  config:
+    import: "optional:configtree:${ZS_SECRETS_DIR:/run/secrets/}"
+  datasource:
+    url: ${ZS_DB_URL}
+    username: ${ZS_DB_USER}
+    password: ${ZS_DB_PASSWORD}
+  data:
+    redis:
+      host: ${ZS_REDIS_HOST}
+      port: ${ZS_REDIS_PORT:6379}
+      password: ${ZS_REDIS_PASSWORD:}
+  flyway:
+    locations: classpath:db/migration
+  modulith:
+    events:
+      jdbc:
+        schema-initialization:
+          enabled: false
+      completion-mode: update
+
+zellastay:
+  environment: ${ZS_ENVIRONMENT}
+
+server:
+  port: ${ZS_SERVER_PORT:8080}
+  shutdown: graceful
+  forward-headers-strategy: framework
+
+management:
+  server:
+    port: ${ZS_MANAGEMENT_PORT:8081}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+      show-details: never
+  metrics:
+    tags:
+      application: zellastay
+      environment: ${ZS_ENVIRONMENT}
+
+logging:
+  structured:
+    format:
+      console: ecs

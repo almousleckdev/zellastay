@@ -1,0 +1,13 @@
+[versions]
+spring-boot = "4.1.2"
+spring-modulith = "2.1.2"
+spotless = "8.10.4"
+archunit = "1.4.2"
+
+[libraries]
+spring-modulith-bom = { module = "org.springframework.modulith:spring-modulith-bom", version.ref = "spring-modulith" }
+archunit-junit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archunit" }
+
+[plugins]
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
