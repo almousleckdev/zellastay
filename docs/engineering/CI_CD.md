@@ -1,12 +1,13 @@
 # CI/CD (GitHub Actions)
 
-Implemented in Phase 0: `backend-ci` (format check, compile with `-Xlint:all -Werror`, unit/architecture/integration tests on Testcontainers, JaCoCo report, container image build), `docs-ci` (`infra/scripts/check-docs.py`: links, decision references, AI-attribution scan) and Dependabot (Gradle, GitHub Actions, Docker). All third-party actions are pinned by commit SHA. The remaining pipelines below are created with their components.
+Implemented in Phase 0: `backend-ci` (format check, compile with `-Xlint:all -Werror`, unit/architecture/integration tests on Testcontainers, JaCoCo report, container image build), `docs-ci` (`infra/scripts/check-docs.py`: links, decision references, AI-attribution scan), `standards-ci` (frontend standards scanner and its tests) and Dependabot (Gradle, GitHub Actions, Docker). All third-party actions are pinned by commit SHA. The remaining pipelines below are created with their components.
 
 ## 1. Pipelines
 
 | Workflow | Trigger | Paths | Jobs |
 |---|---|---|---|
 | `backend-ci` | PR, push to main | `backend/**`, `docs/architecture/MODULAR_ARCHITECTURE.md` (module contract test) | format/lint → compile → unit → module/integration (Testcontainers) → architecture tests → OpenAPI generation + breaking-change diff → SCA/secret scan → coverage report |
+| `standards-ci` | PR, push | all | scanner unit tests, then `check_standards.py` over `apps/` and `packages/` (file size, `any`, platform UI imports, clean-architecture layers, centralized network/error handling, secrets) |
 | `web-ci` (matrix: public-web, vendor-dashboard, admin-dashboard) | PR, push | `apps/<app>/**`, `packages/**` | install (frozen lockfile) → lint → typecheck → unit → build → Playwright (against built app + mocked/staging API) → axe → Lighthouse CI (public-web) |
 | `mobile-ci` | PR, push | `apps/customer-mobile/**` | `flutter analyze` → format check → unit/widget/golden → Android build (debug) → integration tests on emulator (main / nightly) |
 | `api-client-sync` | OpenAPI change | `backend/**` | Regenerate TS and Dart clients; fail if generated output not committed or changed unexpectedly |

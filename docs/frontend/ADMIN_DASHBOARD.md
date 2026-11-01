@@ -32,6 +32,8 @@ Roles and permissions are data-driven and enforced server-side; the UI mirrors t
 
 ## 3. Architecture
 
+Mandatory shared standards: [WEB_ARCHITECTURE.md](WEB_ARCHITECTURE.md) and [ERROR_HANDLING.md](../engineering/ERROR_HANDLING.md) §5. Verification documents open only through short-lived signed URLs requested per view and audited ([MEDIA_ARCHITECTURE.md](../architecture/MEDIA_ARCHITECTURE.md) §4).
+
 Same stack as the other web apps ([PUBLIC_WEBSITE.md](PUBLIC_WEBSITE.md)). Admin UI is English and French (`fr` default). Heavy tables use server-side pagination and saved filters. Destructive or financial actions use a confirmation pattern showing exact impact, requiring a reason field, and use `Idempotency-Key`. Sensitive data is masked by default; "reveal" requires reason and creates an audit event.
 
 ## 4. Security requirements

@@ -7,11 +7,13 @@ Phases are ordered by dependency and risk. Dates are intentionally absent; they 
 - CI skeleton, Docker Compose for local dependencies (PostgreSQL, Redis), migrations tooling (Flyway), OpenAPI generation pipeline, design tokens.
 - Platform skeleton: identity basics, audit, platformconfig (countries, currencies, locales), observability baseline, outbox infrastructure.
 - Exit: empty-but-deployable pipeline to a staging environment; architecture tests enforcing module boundaries.
+- **Phase 0 extension:** centralized backend error handling (request-id filter, problem factory, global handler, error controller, bilingual bundles, code catalog) and enforcement tooling (architecture rules, frontend standards scanner, `standards-ci`) are implemented; Flutter and Next.js enforcement activates as those apps are scaffolded ([STANDARDS_ENFORCEMENT.md](../engineering/STANDARDS_ENFORCEMENT.md)).
 - **Status (2026-11-01):** done — backend project, 22 module packages with enforced dependency contract, Flyway + outbox table, PostgreSQL/Redis dev stack, Dockerfile, CI workflows (backend, docs), architecture and integration tests, typed environment configuration and mounted-secret support. **Not done:** `apps/*` and `packages/*` scaffolding, IaC (`infra/` beyond Docker), OpenAPI generation pipeline, design tokens, audit/identity/platformconfig skeletons beyond empty modules, security starter (deny-by-default) which arrives with the `identity` module, OpenTelemetry tracing, staging deployment. See the Phase 0 report for details.
 
 ## Phase 1 — Supply side and verification (**blocked until Phase 0 is approved**)
 - Identity (customers, vendor users, admins), organization and staff roles, vendor registration, document upload, verification queue, property drafting, media handling, admin moderation, audit viewer.
 - Notification core (templates, outbox, email + in-app first; SMS provider integration validated).
+- Media spike (OD-29) before any document or gallery upload ships: verify authenticated delivery for PDFs/scans, malware scanning approach, strict transformation controls, backup/purge behavior, plan limits; L-18 closed before production documents.
 - Exit: an approved vendor can create a property that is approved but not yet bookable.
 
 ## Phase 2 — Core marketplace transaction (blocking for live payments: OD-18 provider selection, L-1 legal validation; OD-6a timer values)

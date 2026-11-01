@@ -8,7 +8,8 @@
 4. **Circular dependencies between modules are prohibited.** The dependency graph in §4 is the contract. CI runs `ApplicationModules.verify()` and ArchUnit rules; a cycle or an undeclared dependency fails the build.
 5. A new inter-module dependency requires editing §4 in the same change, with a justification, and review.
 6. Cross-module state propagation uses domain events; cross-module reads/commands use API facades. Prefer events when the caller does not need an immediate answer.
-7. `shared` (shared kernel) holds only: value objects (`Money`, `CurrencyCode`, `CountryCode`, `LocaleCode`, typed IDs, `DateRange`), the `Clock` port, base exception types, and the event base type. It contains **no business logic**.
+7. `shared` (shared kernel) holds only: value objects (`Money`, `CurrencyCode`, `CountryCode`, `LocaleCode`, typed IDs, `DateRange`), the `Clock` port, the error model (`ErrorCode`, `ErrorCategory`, abstract `ZellaStayException`), the event base type, and the cross-cutting web error infrastructure in `shared.web` (request-id filter, problem factory, global exception handler, error controller). It contains **no business logic**; module-specific exceptions and error codes live in their own modules.
+8. The media provider SDK (`com.cloudinary..`) is used only in `media.infrastructure`; all other modules use `MediaApi` and `MediaAssetId` (architecture test).
 
 ## 2. Module catalog
 
@@ -18,7 +19,7 @@
 | `platformconfig` | Countries, currencies, locales, time zones, tax rules, required-document sets, enabled payment methods per country, service-fee rules, platform parameters (timers, thresholds), feature flags. |
 | `audit` | Append-only audit log: recording API and admin query. |
 | `identity` | Accounts (customer, vendor user, admin), credentials, sessions/refresh tokens, verification (email/phone), device registrations, guest booking-access tokens, platform roles, user profile and preferences root. |
-| `media` | Upload pipeline, object storage, image variants, galleries' file records, private documents, signed URLs, antivirus/validation hooks. |
+| `media` | The only module that talks to Cloudinary: upload intents and server-proxied uploads, validation and scanning, asset records (public IDs and metadata), variants, private signed URLs, deletion, replacement and orphan cleanup. See [MEDIA_ARCHITECTURE.md](MEDIA_ARCHITECTURE.md). |
 | `onboarding` | Verification cases (subject = organization or property, by opaque reference), submissions with versions, document requirements checklist, reviewer decisions, rejection reasons, resubmission history. |
 | `payment` | Provider abstraction, payment attempts, payments, refunds, ledger (accounting mirror), webhooks, reconciliation, settlement beneficiaries and settlement records, idempotency for payment operations. Admin-facing endpoints only; vendor-facing views live in `organization` (beneficiary setup) and `reporting` (settlement statements) to keep the graph acyclic. |
 | `subscription` | Plans, prices, entitlements, vendor subscriptions, subscription invoices, lifecycle, `EntitlementApi`. |

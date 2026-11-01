@@ -5,7 +5,7 @@ Goals: detect and diagnose problems before users report them; prove business inv
 ## 1. Pillars
 
 ### Logs
-- Structured JSON to stdout; fields: `timestamp`, `level`, `service`, `env`, `version`, `module`, `traceId`, `spanId`, `correlationId`, `requestId`, `actorType`, `actorId` (hashed/opaque), `organizationId`, `country`, event/message.
+- Structured JSON to stdout; fields: `timestamp`, `level`, `service`, `env`, `version`, `module`, `traceId`, `spanId`, `correlationId`, `requestId` (top-level on every line of a request, echoed to clients in error responses and the `X-Request-Id` header), `actorType`, `actorId` (hashed/opaque), `organizationId`, `country`, event/message.
 - **Never log:** passwords, tokens, OTPs, card data, document contents, message bodies, full phone/email (masked), webhook secrets. A logging test scans for forbidden patterns; PII masking utilities are mandatory.
 - Levels: ERROR = action needed; WARN = degraded/recoverable; INFO = business milestones (booking confirmed, payment succeeded); DEBUG off in production by default.
 - Retention per class `[LEGAL]`; access controlled and audited.

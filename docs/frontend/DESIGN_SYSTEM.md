@@ -1,6 +1,6 @@
 # Design System
 
-One design language across four apps, implemented twice: **web** (`packages/ui`, React + design tokens) and **mobile** (Flutter `ThemeData` + shared widgets), both generated from a single source of **design tokens**. Brand identity (name treatment, logo, final palette, typography choices) is a business/design input `[OD-26]`; this document defines structure and rules, and the values below are placeholders until brand approval.
+One design language across four apps, implemented twice: **web** (`packages/ui`, React + design tokens) and **mobile** (Flutter, with native Cupertino implementations on iOS and native Material implementations on Android behind `core/platform_ui`), both generated from a single source of **design tokens**. Brand identity (name treatment, logo, final palette, typography choices) is a business/design input `[OD-26]`; this document defines structure and rules, and the values below are placeholders until brand approval.
 
 ## 1. Principles
 
@@ -39,7 +39,7 @@ Each component spec: purpose, anatomy, variants, states (default, hover, focus, 
 - **Dates:** property-local dates for stays, with explicit time zone note when user's zone differs.
 - **Forms:** inline validation on blur, summary on submit, preserve input on error, clear error codes mapped from API problem details.
 - **Loading:** skeletons for content, spinners only for short actions; never block on non-critical data.
-- **Errors:** friendly localized messages mapped from stable API error codes; always offer next action; show `traceId` in a copyable "technical details" disclosure for support.
+- **Errors:** friendly localized messages mapped from stable API error codes; always offer next action; show `requestId` in a copyable "technical details" disclosure for support.
 - **Destructive actions:** confirmation with explicit consequence text (e.g., refund amount).
 - **Status language:** consistent labels for booking, payment, verification, subscription states across apps (single i18n namespace `status.*`).
 - **Empty states** guide the next step (e.g., vendor with no property → "Add your first property").
@@ -53,6 +53,10 @@ Color is never the only signal; focus rings visible (≥ 3:1); form labels persi
 
 Single icon set (open license, outline style) shared via token names; amenity icons mapped from `cat_amenity.icon`. Photos: server-generated responsive variants (WebP/AVIF), blur-hash placeholders, aspect ratios fixed (e.g., 4:3 cards, 16:9 hero) to avoid layout shift. Alt text from captions; decorative images marked.
 
-## 7. Governance
+## 7. Required state and error components
+
+Both platforms provide the same behavior contract: `ErrorState`/`ErrorView`, `EmptyState`, loading skeletons, inline field errors and a transient notice (toast/snackbar equivalent). Web versions live in `packages/ui`; mobile versions are implemented per platform in `core/platform_ui`. They render the localized server `detail` and never raw exceptions ([ERROR_HANDLING.md](../engineering/ERROR_HANDLING.md)). Media uses named variants only ([MEDIA_ARCHITECTURE.md](../architecture/MEDIA_ARCHITECTURE.md) §5).
+
+## 8. Governance
 
 Design tokens and components are versioned; breaking changes follow semantic versioning in the workspace; changes need design + engineering review; Storybook/catalog deployed for review on each PR (no production data).

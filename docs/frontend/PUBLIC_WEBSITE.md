@@ -10,6 +10,8 @@ Note: after approval, vendors operate in the Vendor Dashboard ([VENDOR_DASHBOARD
 
 ## 2. Architecture
 
+The shared Next.js standards (feature structure, shared components, small files, strict types, one API client, consistent states) in [WEB_ARCHITECTURE.md](WEB_ARCHITECTURE.md) are mandatory; error handling follows [ERROR_HANDLING.md](../engineering/ERROR_HANDLING.md) §5; media follows [MEDIA_ARCHITECTURE.md](../architecture/MEDIA_ARCHITECTURE.md).
+
 - Next.js (App Router), TypeScript `strict`, React Server Components for public SEO pages, client components only where interactivity is needed.
 - Rendering strategy: ISR/SSR for property and destination pages (cache tags revalidated on catalog events via a signed revalidation webhook), SSR for search with edge caching of anonymous queries, CSR for authenticated account areas.
 - Data access: generated TypeScript client from OpenAPI (shared package `packages/api-client`); server-side fetch with request-scoped locale; TanStack Query for client-side caching/mutations.

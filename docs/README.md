@@ -21,14 +21,15 @@ Reading order for newcomers: PRD → Business model → Booking lifecycle → Sy
 - [CHAT_ARCHITECTURE.md](architecture/CHAT_ARCHITECTURE.md)
 - [INVENTORY_ARCHITECTURE.md](architecture/INVENTORY_ARCHITECTURE.md)
 - [INTERNATIONALIZATION.md](architecture/INTERNATIONALIZATION.md)
+- [MEDIA_ARCHITECTURE.md](architecture/MEDIA_ARCHITECTURE.md) — Cloudinary media and documents
 - [PAYMENT_PROVIDER_RESEARCH.md](architecture/PAYMENT_PROVIDER_RESEARCH.md) — OD-18 research, no selection
 - [EVENT_CATALOG.md](architecture/EVENT_CATALOG.md) — domain events
 
 ## Frontend (`frontend/`)
-[CUSTOMER_MOBILE.md](frontend/CUSTOMER_MOBILE.md) · [PUBLIC_WEBSITE.md](frontend/PUBLIC_WEBSITE.md) · [VENDOR_DASHBOARD.md](frontend/VENDOR_DASHBOARD.md) · [ADMIN_DASHBOARD.md](frontend/ADMIN_DASHBOARD.md) · [DESIGN_SYSTEM.md](frontend/DESIGN_SYSTEM.md)
+[CUSTOMER_MOBILE.md](frontend/CUSTOMER_MOBILE.md) · [WEB_ARCHITECTURE.md](frontend/WEB_ARCHITECTURE.md) · [PUBLIC_WEBSITE.md](frontend/PUBLIC_WEBSITE.md) · [VENDOR_DASHBOARD.md](frontend/VENDOR_DASHBOARD.md) · [ADMIN_DASHBOARD.md](frontend/ADMIN_DASHBOARD.md) · [DESIGN_SYSTEM.md](frontend/DESIGN_SYSTEM.md)
 
 ## Engineering (`engineering/`)
-[CODING_STANDARDS.md](engineering/CODING_STANDARDS.md) · [TESTING_STRATEGY.md](engineering/TESTING_STRATEGY.md) · [DEVOPS.md](engineering/DEVOPS.md) · [CI_CD.md](engineering/CI_CD.md) · [OBSERVABILITY.md](engineering/OBSERVABILITY.md) · [REVIEW.md](engineering/REVIEW.md)
+[CODING_STANDARDS.md](engineering/CODING_STANDARDS.md) · [TESTING_STRATEGY.md](engineering/TESTING_STRATEGY.md) · [DEVOPS.md](engineering/DEVOPS.md) · [CI_CD.md](engineering/CI_CD.md) · [OBSERVABILITY.md](engineering/OBSERVABILITY.md) · [REVIEW.md](engineering/REVIEW.md) · [ERROR_HANDLING.md](engineering/ERROR_HANDLING.md) · [STANDARDS_ENFORCEMENT.md](engineering/STANDARDS_ENFORCEMENT.md)
 
 ## Decisions
 - [DECISIONS.md](DECISIONS.md) — accepted architecture decisions

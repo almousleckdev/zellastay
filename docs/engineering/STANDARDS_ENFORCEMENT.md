@@ -1,0 +1,66 @@
+# Standards Enforcement Matrix
+
+Every mandatory engineering rule needs a mechanism that fails the build, or an explicit statement of what is still review-only. Status: **Active** (runs in CI today), **Ready** (written and tested, activates when the component exists), **Planned** (to be created with the component; the phase is stated), **Review** (cannot be automated; reviewer checklist).
+
+## 1. Backend
+
+| Rule | Mechanism | Status |
+|---|---|---|
+| Module boundaries and allowed dependencies equal the documented contract | Spring Modulith `verify()` + `ModuleStructureTest` (compares `package-info.java` with `MODULAR_ARCHITECTURE.md` §4) | Active |
+| Layering (`web → application → domain ← infrastructure`), no framework in domain | ArchUnit `ArchitectureRules` | Active |
+| Repositories not used by controllers; transactions only in application services; controllers only in `web` | ArchUnit | Active |
+| Injected `Clock`; no standard streams, field injection, `java.util.logging`, generic exceptions | ArchUnit + `GeneralCodingRules` | Active |
+| Errors: only `@RestControllerAdvice` may declare `@ExceptionHandler`; advice lives in `web` | ArchUnit `ErrorHandlingRules` | Active |
+| Errors: controllers never contain `try/catch` | ArchUnit custom condition | Active |
+| Errors: every exception under `com.zellastay` extends `ZellaStayException` | ArchUnit | Active |
+| Errors: contract, status mapping, localization, no leakage, request id | `ApiExceptionHandlerTest`, `RequestIdLoggingIT` | Active |
+| Errors: codes well-formed, unique, namespaced by module, translated fr + en | `ErrorCatalogTest` | Active |
+| Cloudinary SDK only inside `media.infrastructure` | ArchUnit `vendorSdkOnlyInMediaInfrastructure` (activates when the SDK is added; proven by fixtures now) | Ready |
+| Rules actually detect violations | `ArchitectureRulesDetectViolationsTest` runs every rule against violating fixtures and a clean fixture | Active |
+| Files focused and small (≤ 300 lines) | `SourceFileSizeTest` | Active |
+| Formatting, `-Xlint:all -Werror` | Spotless, compiler flags | Active |
+| Secrets never committed | `.gitignore`, gitleaks run during verification; CI secret scanning | Planned (CI job with Phase 1) |
+| Media: signature construction, size enforcement, private URL authorization, cleanup | Media module tests (see MEDIA_ARCHITECTURE §10) | Planned (Phase 1) |
+| Authorization tests for every endpoint (allowed, denied, cross-tenant) | Route-catalog driven test | Planned (with `identity`, Phase 1) |
+
+## 2. Flutter
+
+| Rule | Mechanism | Status |
+|---|---|---|
+| Clean Architecture layers (domain pure Dart; data not importing presentation/di; presentation reaching data only through domain and `di`) | `check_standards.py` (`clean-architecture`) + fixtures | Ready |
+| No feature-to-feature imports; core/shared do not depend on features | `check_standards.py` (`no-feature-coupling`) | Ready |
+| Material/Cupertino imports only inside `core/platform_ui`; `ios/` never imports Material, `android/` never imports Cupertino | `check_standards.py` (`native-platform-ui`) | Ready |
+| Platform branching (`Platform.isIOS`, `defaultTargetPlatform`) only in `core/platform_ui` | `check_standards.py` (`platform-abstraction`) | Ready |
+| Rendered widget tree never shows Cupertino widgets on Android nor Material widgets on iOS | Shared widget-test helper that pumps every screen with `debugDefaultTargetPlatformOverride` for both platforms and fails on forbidden widget types | Planned (first screens, Phase 1) |
+| Network exceptions translated only in `core/network`; HTTP clients restricted to `core/network` and feature data layers | `check_standards.py` (`central-error-handling`) | Ready |
+| No `dynamic`; files ≤ 300 lines; no secrets | `check_standards.py` (`no-dynamic`, `file-size`, `no-secrets-in-frontend`) | Ready |
+| Static analysis strict modes, `dart format`, `flutter analyze` | `analysis_options.yaml`, CI | Planned (Phase 1 scaffold) |
+| No duplicated widgets or logic | Review checklist; `packages`-level widget catalog | Review |
+
+## 3. Next.js apps
+
+| Rule | Mechanism | Status |
+|---|---|---|
+| No `any`, no `@ts-ignore`/`@ts-nocheck` | `check_standards.py` + ESLint `no-explicit-any`, `ban-ts-comment` | Ready (scanner) / Planned (ESLint with first app) |
+| Files ≤ 300 lines, functions ≤ 40 | Scanner (files) + ESLint `max-lines`, `max-lines-per-function` | Ready / Planned |
+| All network calls through `packages/api-client` | Scanner (`central-api-client`) + ESLint `no-restricted-imports` | Ready / Planned |
+| Apps never import each other | Scanner (`no-cross-app-import`) + dependency-cruiser | Ready / Planned |
+| No raw HTML injection | Scanner (`no-raw-html`) | Ready |
+| No Cloudinary or secret-like variables in frontends; no env files in apps | Scanner (`no-secrets-in-frontend`, `no-env-files`) | Ready |
+| Feature structure, import direction `ui → hooks → services → api`, no feature cycles | dependency-cruiser / `eslint-plugin-boundaries` config | Planned (first app) |
+| Loading/error/empty/success states for every data view | Component tests per view; review | Planned / Review |
+| Error boundaries present in each app | Playwright journeys (404, 500, offline) + scaffold template | Planned |
+| No hardcoded user-visible strings | Custom ESLint rule + catalog key parity check | Planned |
+
+## 4. Repository-wide
+
+| Rule | Mechanism | Status |
+|---|---|---|
+| Docs links valid; `OD-n`/`ADR-n` references defined; no AI attribution in project files | `infra/scripts/check-docs.py` (`docs-ci`) | Active |
+| Frontend standards scanner and its own tests | `standards-ci` workflow: scanner unit tests + scan of `apps/` and `packages/` | Active |
+| Workflows valid and pinned | actionlint (run during verification), actions pinned by SHA, Dependabot | Active |
+| Documentation updated with the change | CI heuristics + [REVIEW.md](REVIEW.md) | Review |
+
+## 5. Rules for changing a rule
+
+A rule is relaxed or removed only through an ADR. Every automated rule has a test proving it detects a violation (fixtures for ArchUnit, scanner tests for frontend rules). When a component is scaffolded, its "Planned" rows become part of that scaffold's definition of done.

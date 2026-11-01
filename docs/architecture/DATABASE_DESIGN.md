@@ -15,7 +15,7 @@ PostgreSQL is the system of record. This document defines conventions, per-modul
 | Soft delete | Only where legally/operationally required (`deleted_at`); default is state columns (`ARCHIVED`) and explicit retention jobs |
 | Tenant column | Vendor-owned tables carry `organization_id uuid not null` (and `property_id` where relevant) |
 | Localized text | Content that vendors/admins author in multiple languages uses a `*_translation` table (`entity_id, locale, field columns`), or `jsonb` keyed by locale for small bounded fields; fallback chain defined in [INTERNATIONALIZATION.md](INTERNATIONALIZATION.md) |
-| PII | Columns classified (see [SECURITY_ARCHITECTURE.md](SECURITY_ARCHITECTURE.md) §10); sensitive documents never in DB, only object keys |
+| PII | Columns classified (see [SECURITY_ARCHITECTURE.md](SECURITY_ARCHITECTURE.md) §10); sensitive documents never in the database, only Cloudinary public IDs and metadata |
 
 ## 2. Cross-module references
 
@@ -49,7 +49,7 @@ Key columns only. `+std` = standard columns (id, created_at, updated_at, version
 - Notification preferences are owned by `notif_` (`notif_preference`), not identity.
 
 ### media
-- `media_asset(id, owner_type, owner_id, organization_id?, visibility {PUBLIC, PRIVATE}, kind {IMAGE, VIDEO, DOCUMENT, CHAT_ATTACHMENT}, object_key, mime, size_bytes, checksum, status {UPLOADING, SCANNED, READY, REJECTED}, variants jsonb)`
+- `media_asset(id, kind {PROPERTY_IMAGE, PROPERTY_VIDEO, PROFILE_IMAGE, CHAT_IMAGE, VERIFICATION_DOCUMENT, OTHER}, owner_type, owner_id, organization_id?, visibility {PUBLIC, PRIVATE}, provider, public_id, resource_type, delivery_type, version, format, bytes, width, height, duration_ms, etag, status {PENDING, READY, REJECTED, ORPHANED, DELETING, DELETED}, intent_expires_at, created_by, created_at, ready_at, deleted_at)` unique `(provider, resource_type, delivery_type, public_id)`. Only provider identifiers and metadata are stored, never binaries or URLs. See [MEDIA_ARCHITECTURE.md](MEDIA_ARCHITECTURE.md).
 
 ### onb (onboarding)
 - `onb_case(id, subject_type {ORGANIZATION, PROPERTY}, subject_id, organization_id, display_snapshot jsonb, status {DRAFT, SUBMITTED, IN_REVIEW, APPROVED, REJECTED}, current_submission_no, assigned_reviewer_id, ...)`

@@ -15,7 +15,7 @@ Applies to all code. Language-specific sections follow universal rules. Where a 
 9. **No hardcoded secrets or environment-specific configuration** (hosts, URLs, keys, bucket names). Config through typed configuration properties from environment/secret manager; validated at startup (fail fast).
 10. **Comments:** avoid unnecessary comments; code, names and types explain *what*. Comment only *why* when non-obvious (constraint, workaround with link to issue, legal reason). No commented-out code, no TODOs without an issue reference, no change-log comments.
 11. **No AI attribution** anywhere in project files (code, docs, commit trailers in project-generated artifacts, PR text), except where tooling requirements for commit trailers are explicitly configured by the maintainers.
-12. Errors are explicit: domain errors as typed exceptions/results with stable codes; never swallow exceptions; never use exceptions for normal control flow in hot paths.
+12. Errors are explicit and **centralized** ([ERROR_HANDLING.md](ERROR_HANDLING.md)): domain errors are typed `ZellaStayException` subclasses with stable `ErrorCode`s; one global handler produces responses; clients translate failures in one place; never swallow exceptions; never expose internals; never use exceptions for normal control flow in hot paths.
 13. Logging: structured, no PII/secrets, correlation ids, levels used consistently.
 14. Money is never a floating-point type. Time comes from an injected `Clock` (backend) or injectable time source, never `now()` directly in domain logic.
 
@@ -62,12 +62,18 @@ Applies to all code. Language-specific sections follow universal rules. Where a 
 - ESLint + Prettier + `tsc --noEmit` clean; import boundaries enforced (apps may import `packages/*`, never other apps).
 - Environment: only `NEXT_PUBLIC_*` for public values; secrets server-side only.
 
+## 3a. Next.js architecture
+
+Feature-oriented structure, shared components and API client reuse, small single-responsibility files and consistent states are mandatory: [WEB_ARCHITECTURE.md](../frontend/WEB_ARCHITECTURE.md).
+
 ## 4. Dart / Flutter
+
+Clean Architecture, native Cupertino-on-iOS / Material-on-Android UI behind `core/platform_ui`, strict DRY and small files are mandatory: [CUSTOMER_MOBILE.md](../frontend/CUSTOMER_MOBILE.md) §2–§3.
 
 - `analysis_options.yaml` with strict modes; `flutter analyze` clean; `dart format` enforced.
 - Riverpod for state and DI; providers are small and single-purpose; no global singletons; no business logic in widgets (widgets render state, call notifiers).
 - Immutable models (sealed classes/records/freezed); no `dynamic`; no `!` without justification.
-- Feature-first folders per [CUSTOMER_MOBILE.md](../frontend/CUSTOMER_MOBILE.md); no cross-feature imports except through `shared`/`core`.
+- Layered feature folders (`domain`, `data`, `di`, `presentation`) per [CUSTOMER_MOBILE.md](../frontend/CUSTOMER_MOBILE.md); no cross-feature imports except through `shared`/`core`; Material/Cupertino imports and platform branching only in `core/platform_ui`.
 - All strings in ARB; all dimensions/colors from theme tokens.
 
 ## 5. SQL and scripts

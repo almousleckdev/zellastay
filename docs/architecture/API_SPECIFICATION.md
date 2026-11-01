@@ -24,9 +24,8 @@ Conventions and endpoint catalog. The OpenAPI 3.1 document generated from code (
 - **Filtering/sorting:** explicit allow-listed query params; no generic query DSL.
 - **Idempotency:** mutating endpoints that create money- or inventory-affecting resources (`POST /bookings`, `POST /bookings/{id}/payments`, refunds, subscription purchase) **require** `Idempotency-Key` (UUID). Same key + same body ⇒ original response; same key + different body ⇒ `422 idempotency_key_reuse`. Keys retained ≥ 24 h.
 - **Concurrency:** `ETag`/`If-Match` on editable resources (property, rates); stale ⇒ `412`.
-- **Errors:** RFC 9457 `application/problem+json`:
-  `{ type, title, status, detail, code, traceId, errors:[{field, code, message}] }` where `code` is a stable machine code (`booking.unavailable`, `payment.declined`, `auth.forbidden`…). Messages are localized; codes are not. No stack traces or internal ids leak.
-- **Status codes:** 200/201/202/204; 400 validation; 401 unauthenticated; 403 unauthorized; 404 (also used to hide existence across tenants); 409 conflict (state/inventory); 412 stale; 422 semantic; 429 rate limit with `Retry-After`.
+- **Errors:** RFC 9457 `application/problem+json` produced only by the central handler: `{ type, title, status, detail, code, requestId, errors?:[{field, code, message}] }`. `code` is a stable machine code from the owning module's catalog (`booking.unavailable`, `auth.forbidden`…); `title`/`detail`/field messages are localized by the server (fr default, `Accept-Language` en); codes are not. `requestId` matches the `X-Request-Id` response header and the structured logs. No stack traces, class names, SQL, rejected values or internal identifiers ever appear. Full standard, categories and client behavior: [ERROR_HANDLING.md](../engineering/ERROR_HANDLING.md).
+- **Status codes:** 200/201/202/204; 400 validation; 401 unauthenticated; 403 unauthorized; 404 (also used to hide existence across tenants); 405/406/413/415 protocol errors; 409 conflict (state/inventory, concurrent modification); 412 stale; 422 business rule; 429 rate limit with `Retry-After`; 500 unexpected; 503 retryable dependency/lock contention. The category-to-status mapping lives in one place.
 - **Validation:** Bean Validation at the web layer for shape; domain rules in domain/application.
 - **Rate limits:** per IP and per principal by endpoint class (auth strictest); Redis token bucket.
 - **Observability headers:** `X-Request-Id` accepted/returned; W3C `traceparent` propagated.
@@ -99,8 +98,19 @@ Only the resource map is fixed here; field-level schemas come from OpenAPI.
 | `/audit/events` | Audit search |
 | `/reports/…` | Platform reports |
 
+### Media (owned by the `media` module)
+| Resource | Operations |
+|---|---|
+| `POST /media/upload-intents` | Authorize and create a signed direct-upload payload for galleries/videos (server-chosen `public_id`, folder, formats; no secrets) |
+| `POST /media` (multipart) | Server-proxied upload for avatars, chat images and verification documents (validated and scanned server-side) |
+| `POST /media/{id}/complete` | Client confirmation; the verified webhook is authoritative |
+| `POST /media/{id}/access` | Short-lived signed URL for private media after authorization (audited) |
+| `DELETE /media/{id}` | Request deletion/replacement through the owning feature |
+
+Owners (catalog, onboarding, chat, identity) expose their own endpoints for attaching media; clients never address Cloudinary public IDs. Design: [MEDIA_ARCHITECTURE.md](MEDIA_ARCHITECTURE.md).
+
 ### Webhooks
-`POST /webhooks/{providerKey}` — verify signature, persist raw event (dedupe), respond 2xx quickly, process asynchronously.
+`POST /webhooks/{providerKey}` — verify signature, persist raw event (dedupe), respond 2xx quickly, process asynchronously. Payment providers and `cloudinary` (upload notifications, verified with `X-Cld-Signature`/`X-Cld-Timestamp`).
 
 ## 4. Real-time (WebSocket + STOMP)
 

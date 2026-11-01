@@ -29,6 +29,10 @@ Implemented in Phase 0: architecture tests with fixtures that prove each ArchUni
 7. **Security:** SQL injection and XSS probes on inputs, upload validation, rate-limit behavior, JWT tampering/expiry/audience, refresh token reuse, CORS.
 8. **Migrations:** Flyway applies cleanly on an empty database and on a snapshot of the previous release schema; expand/contract compatibility check.
 9. **Internationalization:** template completeness (fr/en), message bundle key parity, locale fallback, currency formatting, time-zone boundaries (stay dates around midnight and DST-free but zone-offset cases for other countries).
+10a. **Error handling:** every error category's status/code/localization, validation shape, no leakage of stacks/SQL/secrets, request-id propagation to logs, code catalog completeness (fr + en); on clients: failure mapping, boundaries and states ([ERROR_HANDLING.md](ERROR_HANDLING.md)).
+10b. **Platform UI (Flutter):** each `platform_ui` component tested on iOS and Android; screens pumped on both platforms assert no Material widgets on iOS and no Cupertino widgets on Android.
+10c. **Frontend standards:** scanner tests with violating and clean fixtures (`infra/scripts/tests`); backend architecture rules proven against violating fixtures.
+10d. **Media:** signature construction, intent → webhook → ready, oversize/invalid rejection with provider cleanup, replacement, deletion retry, orphan cleanup, private URL authorization and audit.
 10. **Time:** all time-dependent logic tested with a controllable `Clock` (expiry, cancellation tiers, check-in windows).
 11. **Reconciliation:** each outcome type; automatic vs manual resolution.
 12. **Chat:** access matrix by booking status and role; multi-instance delivery; unread counter consistency; retention job.

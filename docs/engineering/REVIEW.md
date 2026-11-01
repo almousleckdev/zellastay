@@ -44,6 +44,14 @@ For agent-authored work, the agent performs a structured self-review against thi
 - [ ] Audit events emitted for privileged/financial actions.
 - [ ] No unverified legal assumption encoded; `[LEGAL]` items flagged.
 
+### Error handling, platform UI and media (mandatory standards)
+- [ ] Errors flow through the central handler/translator: no `try/catch` in controllers, no hand-built error bodies, no raw exceptions or messages shown to users; new error codes have fr + en messages ([ERROR_HANDLING.md](ERROR_HANDLING.md)).
+- [ ] No stack traces, SQL, class names or internal details in responses or UI.
+- [ ] Flutter: layer boundaries respected; no Material/Cupertino imports or platform branching outside `core/platform_ui`; iOS shows only Cupertino, Android only Material; no duplicated widgets/logic.
+- [ ] Next.js: feature structure respected; shared components reused; no raw `fetch` outside `api-client`; no `any`; files small; loading/error/empty/success states present.
+- [ ] Media: provider SDK confined to `media.infrastructure`; no secrets in frontends; uploads server-authorized with server-side validation; deletion/replacement/cleanup handled; private media only via short-lived signed URLs.
+- [ ] Standards enforcement still passes ([STANDARDS_ENFORCEMENT.md](STANDARDS_ENFORCEMENT.md)); a rule is never relaxed without an ADR.
+
 ### Quality
 - [ ] Tests written first and meaningful (behavior, edge cases, failure modes); no tests tailored to pass trivially; no skipped tests.
 - [ ] No hardcoded business data, URLs, environment settings; configuration via typed properties/DB.

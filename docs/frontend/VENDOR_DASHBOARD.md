@@ -24,6 +24,8 @@ Navigation is generated from the user's effective permissions delivered by the A
 
 ## 2. Architecture
 
+Mandatory shared standards: [WEB_ARCHITECTURE.md](WEB_ARCHITECTURE.md) and [ERROR_HANDLING.md](../engineering/ERROR_HANDLING.md) §5. Property photos and videos use backend-issued signed uploads with upload progress, per-file validation feedback and server-side rejection handling ([MEDIA_ARCHITECTURE.md](../architecture/MEDIA_ARCHITECTURE.md) §3.2); verification documents are uploaded through the server-proxied flow.
+
 Same stack and conventions as the public website ([PUBLIC_WEBSITE.md](PUBLIC_WEBSITE.md)): Next.js App Router, TypeScript strict, generated API client, TanStack Query, BFF cookie session, `next-intl` (fr default, en), shared `packages/ui`.
 
 Differences:
