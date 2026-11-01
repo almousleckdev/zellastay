@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-jdk AS build
+FROM eclipse-temurin:25-jdk AS build
 WORKDIR /workspace
 COPY gradlew settings.gradle.kts build.gradle.kts gradle.properties ./
 COPY gradle gradle
@@ -7,7 +7,7 @@ COPY src src
 RUN ./gradlew --no-daemon bootJar -x test \
  && java -Djarmode=tools -jar build/libs/*-SNAPSHOT.jar extract --layers --destination build/extracted
 
-FROM eclipse-temurin:21-jre AS runtime
+FROM eclipse-temurin:25-jre AS runtime
 RUN groupadd --system --gid 10001 app && useradd --system --uid 10001 --gid app --no-create-home app
 WORKDIR /app
 COPY --from=build /workspace/build/extracted/dependencies/ ./
