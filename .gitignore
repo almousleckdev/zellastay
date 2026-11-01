@@ -1,0 +1,31 @@
+.DS_Store
+.idea/
+.vscode/
+*.iml
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+*.log
+
+# Backend
+backend/**/target/
+backend/**/build/
+backend/.gradle/
+
+# Web
+node_modules/
+.next/
+.turbo/
+dist/
+coverage/
+
+# Flutter
+**/.dart_tool/
+**/build/
+**/.flutter-plugins*
+**/Pods/
+**/*.g.dart.bak

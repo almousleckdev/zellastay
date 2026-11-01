@@ -1,0 +1,40 @@
+# Documentation Index
+
+Reading order for newcomers: PRD → Business model → Booking lifecycle → System architecture → Modular architecture → Security → the specific area you work on → Coding standards → Review.
+
+## Product (`product/`)
+- [PRD.md](product/PRD.md) — vision, requirements with IDs, NFRs
+- [BUSINESS_MODEL.md](product/BUSINESS_MODEL.md) — revenue, subscriptions, funds flow
+- [FEATURES.md](product/FEATURES.md) — feature → module → surface → phase
+- [USER_FLOWS.md](product/USER_FLOWS.md)
+- [BOOKING_LIFECYCLE.md](product/BOOKING_LIFECYCLE.md) — authoritative state machine
+- [ROADMAP.md](product/ROADMAP.md)
+
+## Architecture (`architecture/`)
+- [SYSTEM_ARCHITECTURE.md](architecture/SYSTEM_ARCHITECTURE.md) — includes the index of the 14 mandated concerns
+- [MODULAR_ARCHITECTURE.md](architecture/MODULAR_ARCHITECTURE.md) — module catalog and the dependency contract
+- [DATABASE_DESIGN.md](architecture/DATABASE_DESIGN.md)
+- [API_SPECIFICATION.md](architecture/API_SPECIFICATION.md)
+- [SECURITY_ARCHITECTURE.md](architecture/SECURITY_ARCHITECTURE.md)
+- [PAYMENT_ARCHITECTURE.md](architecture/PAYMENT_ARCHITECTURE.md)
+- [NOTIFICATION_ARCHITECTURE.md](architecture/NOTIFICATION_ARCHITECTURE.md)
+- [CHAT_ARCHITECTURE.md](architecture/CHAT_ARCHITECTURE.md)
+- [INVENTORY_ARCHITECTURE.md](architecture/INVENTORY_ARCHITECTURE.md)
+- [INTERNATIONALIZATION.md](architecture/INTERNATIONALIZATION.md)
+- [PAYMENT_PROVIDER_RESEARCH.md](architecture/PAYMENT_PROVIDER_RESEARCH.md) — OD-18 research, no selection
+- [EVENT_CATALOG.md](architecture/EVENT_CATALOG.md) — domain events
+
+## Frontend (`frontend/`)
+[CUSTOMER_MOBILE.md](frontend/CUSTOMER_MOBILE.md) · [PUBLIC_WEBSITE.md](frontend/PUBLIC_WEBSITE.md) · [VENDOR_DASHBOARD.md](frontend/VENDOR_DASHBOARD.md) · [ADMIN_DASHBOARD.md](frontend/ADMIN_DASHBOARD.md) · [DESIGN_SYSTEM.md](frontend/DESIGN_SYSTEM.md)
+
+## Engineering (`engineering/`)
+[CODING_STANDARDS.md](engineering/CODING_STANDARDS.md) · [TESTING_STRATEGY.md](engineering/TESTING_STRATEGY.md) · [DEVOPS.md](engineering/DEVOPS.md) · [CI_CD.md](engineering/CI_CD.md) · [OBSERVABILITY.md](engineering/OBSERVABILITY.md) · [REVIEW.md](engineering/REVIEW.md)
+
+## Decisions
+- [DECISIONS.md](DECISIONS.md) — accepted architecture decisions
+- [OPEN_DECISIONS.md](OPEN_DECISIONS.md) — open business/technical decisions, `[LEGAL]` register, risks
+
+## Conventions used in the documents
+- `[OD-n]` → open decision in OPEN_DECISIONS.md. `[LEGAL]` → needs local legal or provider validation. `[ADR-n]` → decision in DECISIONS.md.
+- FR-/NFR- identifiers refer to PRD requirements.
+- Status values (booking, payment, subscription, verification) have exactly one definition each; other documents link to it rather than redefine it.
