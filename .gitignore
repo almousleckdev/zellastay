@@ -10,6 +10,7 @@
 *.p12
 *.jks
 *.log
+infra/docker/secrets/
 
 # Backend
 backend/**/target/

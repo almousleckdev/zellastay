@@ -24,6 +24,8 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -53,6 +55,20 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
       LOG.info("Request rejected code={} category={}", code.code(), code.category());
     }
     return respond(problems.create(code, ex.messageArguments()));
+  }
+
+  @ExceptionHandler(AccessDeniedException.class)
+  ResponseEntity<Object> handleAccessDenied(AccessDeniedException ex) {
+    LOG.info("Request rejected code={} category=FORBIDDEN", CommonErrorCode.AUTH_FORBIDDEN.code());
+    return respond(problems.create(CommonErrorCode.AUTH_FORBIDDEN, List.of()));
+  }
+
+  @ExceptionHandler(AuthenticationException.class)
+  ResponseEntity<Object> handleAuthentication(AuthenticationException ex) {
+    LOG.info(
+        "Request rejected code={} category=UNAUTHENTICATED",
+        CommonErrorCode.AUTH_UNAUTHENTICATED.code());
+    return respond(problems.create(CommonErrorCode.AUTH_UNAUTHENTICATED, List.of()));
   }
 
   @ExceptionHandler(DataIntegrityViolationException.class)
