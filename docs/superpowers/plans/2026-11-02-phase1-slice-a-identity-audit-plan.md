@@ -7,7 +7,7 @@ Status: **approved; A0 to A9 and A11 done (A10, the entitlement contract, moves 
 - One module per task where possible; files ≤ 300 lines, one responsibility; no framework types in `domain`.
 - Every new exception has an `ErrorCode` with French and English text (`ErrorCatalogTest` must stay green).
 - Docs and code change together (module graph, API, DB, events, config contract).
-- Definition of done per task: `./gradlew build` (format, `-Xlint:all -Werror`, all tests, architecture and error tests, JaCoCo), `python3 -I infra/scripts/check-docs.py`, `python3 -I infra/scripts/check_standards.py` and its tests, and, when workflows or secrets are touched, actionlint and gitleaks. Checks that cannot run are reported, never assumed.
+- Definition of done per task: `./gradlew build` (format, `-Xlint:all -Werror`, all tests, architecture and error tests, JaCoCo), `python3 -I infra/tools/check-docs.py`, and, when workflows or secrets are touched, actionlint and gitleaks. Checks that cannot run are reported, never assumed.
 - Nothing is committed or pushed without explicit approval; I propose one commit per task group (A0–A9) for review.
 
 ## Task list
@@ -66,7 +66,7 @@ Bootstrap runner (P-5), admin login in two steps, TOTP enrolment/verification (R
 *Acceptance:* `subscription` module graph unchanged; contract tests document each decision reason.
 
 ### A11 — Closing verification for the slice
-Full uncached build, docs check, standards scanner and tests, actionlint, gitleaks over the would-be tree, a security-focused review against `docs/engineering/REVIEW.md`, mutation checks that deliberately break the guards (remove a rule from a chain, make a code plaintext, drop the audience check, skip a bundle key) and prove the build fails, a list of unexecuted checks. Update `CLAUDE.md` current-phase text and the index.
+Full uncached build, docs check, actionlint, gitleaks over the would-be tree, a security-focused review against `docs/engineering/REVIEW.md`, mutation checks that deliberately break the guards (remove a rule from a chain, make a code plaintext, drop the audience check, skip a bundle key) and prove the build fails, a list of unexecuted checks. Update `CLAUDE.md` current-phase text and the index.
 *Acceptance:* all green; slice report with commit proposals; nothing pushed.
 
 ## Dependencies and order

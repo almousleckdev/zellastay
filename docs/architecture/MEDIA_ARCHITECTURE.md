@@ -8,7 +8,7 @@ Facts below come from Cloudinary's public documentation read on 2026-11-01; item
 
 - All provider access lives in the `media` module. The Cloudinary SDK (`com.cloudinary:cloudinary-http5`; version pinned in `libs.versions.toml`, 2.6.0 at the time of writing) and any `com.cloudinary..` type may be used **only** in `com.zellastay.media.infrastructure` (architecture test).
 - `media.domain`/`application` expose a provider-neutral port (`MediaStorage`). Other modules reference media only by `MediaAssetId` and call `MediaApi` (create upload intent, request private URL, attach/release, delete by owner). No other module learns Cloudinary public IDs, delivery types or URLs.
-- Frontends receive only: the public cloud name, per-upload signed parameters issued for one upload, and delivery URLs built by the backend or by a shared helper from a public ID and a named variant. **The API secret never leaves the backend** (scanner rule `no-secrets-in-frontend`; secret supplied through `ZS_SECRETS_DIR`/environment).
+- Frontends receive only: the public cloud name, per-upload signed parameters issued for one upload, and delivery URLs built by the backend or by a shared helper from a public ID and a named variant. **The API secret never leaves the backend** (frontend lint and CI secret-scanning rules; secret supplied through `ZS_SECRETS_DIR`/environment).
 
 ## 2. Asset policies
 
@@ -76,4 +76,4 @@ Cloudinary's documentation states storage defaults to US data centers, with EU s
 
 ## 10. Testing
 
-Unit tests for signature construction against documented vectors and for URL/variant generation; fake `MediaStorage` for module tests; integration tests for intent → webhook → ready, oversize rejection with destroy, expired-intent cleanup, replacement, deletion retry, private URL authorization (allowed, denied, cross-tenant) and audit; architecture tests for SDK confinement; scanner rules for secrets in frontends; nightly provider contract tests.
+Unit tests for signature construction against documented vectors and for URL/variant generation; fake `MediaStorage` for module tests; integration tests for intent → webhook → ready, oversize rejection with destroy, expired-intent cleanup, replacement, deletion retry, private URL authorization (allowed, denied, cross-tenant) and audit; architecture tests for SDK confinement; lint and secret-scanning rules for frontends; nightly provider contract tests.

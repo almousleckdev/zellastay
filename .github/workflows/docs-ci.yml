@@ -21,4 +21,4 @@ jobs:
         with:
           persist-credentials: false
       - name: Links, decision references, attribution
-        run: python3 -I infra/scripts/check-docs.py
+        run: python3 -I infra/tools/check-docs.py

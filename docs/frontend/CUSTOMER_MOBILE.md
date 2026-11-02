@@ -26,7 +26,7 @@ lib/
     presentation/         Screens, widgets, Riverpod notifiers (state); depends on domain and di only
 ```
 
-Dependency rules (enforced by the standards scanner, see [STANDARDS_ENFORCEMENT.md](../engineering/STANDARDS_ENFORCEMENT.md)):
+Dependency rules (enforced by import-boundary lint rules once the app exists, see [STANDARDS_ENFORCEMENT.md](../engineering/STANDARDS_ENFORCEMENT.md)):
 - `presentation → domain` and `di`; `di → data + domain`; `data → domain`; `domain → nothing`. Presentation never imports data.
 - Features never import other features; shared behavior goes to `shared/` or `core/`. `core` and `shared` never import features.
 - Use cases exist only where there is real logic; no pass-through use cases or single-implementation abstractions without a test seam.
@@ -54,7 +54,7 @@ Code-organization rules:
 - Adaptive constructors that switch toolkits internally (for example `Switch.adaptive`) and third-party packages that draw platform UI are used only inside `platform_ui`.
 - Platform behavior is part of the contract: iOS gets swipe-back, large titles where appropriate, action sheets, Cupertino pickers, bounce physics, no ink ripple; Android gets Material 3 components, system/predictive back, snackbars and bottom sheets, ripple, clamping physics.
 - Custom-painted brand components (maps, charts, galleries) are allowed when built from primitives and not imitating the other platform's controls.
-- **Tests:** two widget tests per `platform_ui` component (one per platform); a shared helper pumps each screen with `debugDefaultTargetPlatformOverride` set to iOS then Android and fails if the iOS tree contains any Material-library widget type or the Android tree contains any widget whose type name starts with `Cupertino` (maintained deny-list of Material control types for the iOS check); golden images per platform for core components. The static import and platform-branching rules run in CI via `infra/scripts/check_standards.py`.
+- **Tests:** two widget tests per `platform_ui` component (one per platform); a shared helper pumps each screen with `debugDefaultTargetPlatformOverride` set to iOS then Android and fails if the iOS tree contains any Material-library widget type or the Android tree contains any widget whose type name starts with `Cupertino` (maintained deny-list of Material control types for the iOS check); golden images per platform for core components. The static import and platform-branching rules run in CI as lint rules once the app is scaffolded.
 
 ## 4. Key behaviors
 

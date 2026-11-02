@@ -88,8 +88,7 @@ Commands (from the repository root):
 | Run the backend in a container too | `docker compose -f infra/docker/compose.yaml --env-file infra/docker/.env --profile app up -d --build` |
 | Build and test | `cd backend && ./gradlew build` (needs Docker running for Testcontainers) |
 | Format | `cd backend && ./gradlew spotlessApply` |
-| Check docs | `python3 -I infra/scripts/check-docs.py` |
-| Frontend standards scan and its tests | `python3 -I infra/scripts/check_standards.py` and `python3 -I -m unittest discover -s infra/scripts -t infra/scripts` |
+| Check docs | `python3 -I infra/tools/check-docs.py` |
 
 Host ports are configurable (`ZS_DB_HOST_PORT`, `ZS_REDIS_HOST_PORT`, `ZS_SERVER_PORT`, `ZS_MANAGEMENT_PORT`) so the stack can coexist with other local services.
 

@@ -84,7 +84,7 @@ Documentation is approved with decisions ADR-13 (approve-then-pay) and ADR-20 (n
 - Only the `media` module (`media.infrastructure`) may use the Cloudinary SDK; other modules use `MediaApi` and `MediaAssetId`. Store public IDs and metadata in PostgreSQL, never binaries. Uploads are server-authorized and server-validated (signed direct upload for galleries/videos, server-proxied for documents/avatars/chat images); sizes are verified server-side. Private files use authenticated delivery with short-lived signed URLs and audit. Never put the API secret in any frontend. Replace by new asset then delete; clean up orphans. Do not build document upload before the OD-29 spike and L-18.
 
 **Enforcement** (`docs/engineering/STANDARDS_ENFORCEMENT.md`)
-- Every rule above has an automated check or a stated review item. Run `./gradlew build` (backend, includes architecture and error tests) and `python3 -I infra/scripts/check_standards.py` plus its tests; when scaffolding an app, activate its "Planned" rows. Never weaken or skip a check; relaxing a rule requires an ADR.
+- Every rule above has an automated check or a stated review item. Run `./gradlew build` (backend, includes architecture and error tests); when scaffolding an app, activate its "Planned" rows (lint and boundary rules). Never weaken or skip a check; relaxing a rule requires an ADR.
 
 ## Scope boundaries
 
@@ -92,7 +92,7 @@ Four independent frontends (`apps/customer-mobile`, `apps/public-web`, `apps/ven
 
 ## Commands
 
-Backend (from `backend/`; Docker must be running for Testcontainers): `./gradlew build` (format check + compile + all tests + JaCoCo), `./gradlew spotlessApply` (format), `./gradlew test --tests '<pattern>'`. Docs check from the repo root: `python3 -I infra/scripts/check-docs.py`; frontend standards scan and its tests: `python3 -I infra/scripts/check_standards.py` and `python3 -I -m unittest discover -s infra/scripts -t infra/scripts`. Local stack and run script: `docs/engineering/DEVOPS.md` §12. Add commands for each frontend here when it is scaffolded.
+Backend (from `backend/`; Docker must be running for Testcontainers): `./gradlew build` (format check + compile + all tests + JaCoCo), `./gradlew spotlessApply` (format), `./gradlew test --tests '<pattern>'`. Docs check from the repo root: `python3 -I infra/tools/check-docs.py`. Local stack and run script: `docs/engineering/DEVOPS.md` §12. Add commands for each frontend here when it is scaffolded.
 
 When adding a module dependency: edit `docs/architecture/MODULAR_ARCHITECTURE.md` §4 **and** the module's `package-info.java` `allowedDependencies`; `ModuleStructureTest` fails if they differ. When adding or changing a domain event, update `docs/architecture/EVENT_CATALOG.md`.
 

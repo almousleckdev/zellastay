@@ -27,13 +27,13 @@ Every mandatory engineering rule needs a mechanism that fails the build, or an e
 
 | Rule | Mechanism | Status |
 |---|---|---|
-| Clean Architecture layers (domain pure Dart; data not importing presentation/di; presentation reaching data only through domain and `di`) | `check_standards.py` (`clean-architecture`) + fixtures | Ready |
-| No feature-to-feature imports; core/shared do not depend on features | `check_standards.py` (`no-feature-coupling`) | Ready |
-| Material/Cupertino imports only inside `core/platform_ui`; `ios/` never imports Material, `android/` never imports Cupertino | `check_standards.py` (`native-platform-ui`) | Ready |
-| Platform branching (`Platform.isIOS`, `defaultTargetPlatform`) only in `core/platform_ui` | `check_standards.py` (`platform-abstraction`) | Ready |
+| Clean Architecture layers (domain pure Dart; data not importing presentation/di; presentation reaching data only through domain and `di`) | Custom import-boundary lint (for example `custom_lint`/`import_lint` rules) | Planned (Flutter scaffold) |
+| No feature-to-feature imports; core/shared do not depend on features | Import-boundary lint (same rule set) | Planned (Flutter scaffold) |
+| Material/Cupertino imports only inside `core/platform_ui`; `ios/` never imports Material, `android/` never imports Cupertino | Import-boundary lint (same rule set) | Planned (Flutter scaffold) |
+| Platform branching (`Platform.isIOS`, `defaultTargetPlatform`) only in `core/platform_ui` | Import-boundary / banned-API lint (same rule set) | Planned (Flutter scaffold) |
 | Rendered widget tree never shows Cupertino widgets on Android nor Material widgets on iOS | Shared widget-test helper that pumps every screen with `debugDefaultTargetPlatformOverride` for both platforms and fails on forbidden widget types | Planned (first screens, Phase 1) |
-| Network exceptions translated only in `core/network`; HTTP clients restricted to `core/network` and feature data layers | `check_standards.py` (`central-error-handling`) | Ready |
-| No `dynamic`; files ≤ 300 lines; no secrets | `check_standards.py` (`no-dynamic`, `file-size`, `no-secrets-in-frontend`) | Ready |
+| Network exceptions translated only in `core/network`; HTTP clients restricted to `core/network` and feature data layers | Import-boundary lint (same rule set) | Planned (Flutter scaffold) |
+| No `dynamic`; files ≤ 300 lines; no secrets | `analysis_options.yaml` (`avoid_dynamic_calls`, strict modes), a file-length check in CI, secret scanning | Planned (Flutter scaffold) |
 | Static analysis strict modes, `dart format`, `flutter analyze` | `analysis_options.yaml`, CI | Planned (Phase 1 scaffold) |
 | No duplicated widgets or logic | Review checklist; `packages`-level widget catalog | Review |
 
@@ -41,12 +41,12 @@ Every mandatory engineering rule needs a mechanism that fails the build, or an e
 
 | Rule | Mechanism | Status |
 |---|---|---|
-| No `any`, no `@ts-ignore`/`@ts-nocheck` | `check_standards.py` + ESLint `no-explicit-any`, `ban-ts-comment` | Ready (scanner) / Planned (ESLint with first app) |
-| Files ≤ 300 lines, functions ≤ 40 | Scanner (files) + ESLint `max-lines`, `max-lines-per-function` | Ready / Planned |
-| All network calls through `packages/api-client` | Scanner (`central-api-client`) + ESLint `no-restricted-imports` | Ready / Planned |
-| Apps never import each other | Scanner (`no-cross-app-import`) + dependency-cruiser | Ready / Planned |
-| No raw HTML injection | Scanner (`no-raw-html`) | Ready |
-| No Cloudinary or secret-like variables in frontends; no env files in apps | Scanner (`no-secrets-in-frontend`, `no-env-files`) | Ready |
+| No `any`, no `@ts-ignore`/`@ts-nocheck` | ESLint `no-explicit-any`, `ban-ts-comment` | Planned (first app) |
+| Files ≤ 300 lines, functions ≤ 40 | ESLint `max-lines`, `max-lines-per-function` | Planned (first app) |
+| All network calls through `packages/api-client` | ESLint `no-restricted-imports` | Planned (first app) |
+| Apps never import each other | dependency-cruiser | Planned (first app) |
+| No raw HTML injection | ESLint `react/no-danger` | Planned (first app) |
+| No Cloudinary or secret-like variables in frontends; no env files in apps | ESLint restricted names for secret-like variables, secret scanning in CI, a check that apps contain no env files | Planned (first app) |
 | Feature structure, import direction `ui → hooks → services → api`, no feature cycles | dependency-cruiser / `eslint-plugin-boundaries` config | Planned (first app) |
 | Loading/error/empty/success states for every data view | Component tests per view; review | Planned / Review |
 | Error boundaries present in each app | Playwright journeys (404, 500, offline) + scaffold template | Planned |
@@ -56,11 +56,10 @@ Every mandatory engineering rule needs a mechanism that fails the build, or an e
 
 | Rule | Mechanism | Status |
 |---|---|---|
-| Docs links valid; `OD-n`/`ADR-n` references defined; no AI attribution in project files | `infra/scripts/check-docs.py` (`docs-ci`) | Active |
-| Frontend standards scanner and its own tests | `standards-ci` workflow: scanner unit tests + scan of `apps/` and `packages/` | Active |
+| Docs links valid; `OD-n`/`ADR-n` references defined; no AI attribution in project files | `infra/tools/check-docs.py` (`docs-ci`) | Active |
 | Workflows valid and pinned | actionlint (run during verification), actions pinned by SHA, Dependabot | Active |
 | Documentation updated with the change | CI heuristics + [REVIEW.md](REVIEW.md) | Review |
 
 ## 5. Rules for changing a rule
 
-A rule is relaxed or removed only through an ADR. Every automated rule has a test proving it detects a violation (fixtures for ArchUnit, scanner tests for frontend rules). When a component is scaffolded, its "Planned" rows become part of that scaffold's definition of done.
+A rule is relaxed or removed only through an ADR. Every automated rule has a test proving it detects a violation (fixtures for ArchUnit; lint-rule tests for the frontends). When a component is scaffolded, its "Planned" rows become part of that scaffold's definition of done.

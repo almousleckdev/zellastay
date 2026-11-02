@@ -70,6 +70,6 @@ New shared component or hook: justified by a second use or by design-system scop
 ## 6. Enforcement
 
 - **Lint (set up with the first app):** `@typescript-eslint/no-explicit-any`, `ban-ts-comment`, `max-lines` (300) and `max-lines-per-function` (40), `no-restricted-imports` (raw HTTP clients, other apps, deep imports into other features), `jsx-a11y`, import-cycle detection (`import/no-cycle` or `dependency-cruiser`), and a custom rule for hardcoded user-visible strings.
-- **Repository scanner** (`infra/scripts/check_standards.py`, runs in CI today and on every app): file size, `any`, `@ts-ignore`, raw HTML, raw network calls outside `api-client`, cross-app imports, Cloudinary/secret names and secret-like `NEXT_PUBLIC_*` variables, env files in apps.
+- **Repository checks (added with the first app):** file size, raw HTML, Cloudinary/secret names and secret-like `NEXT_PUBLIC_*` variables, and env files in apps, enforced through ESLint rules, dependency-cruiser and CI secret scanning.
 - **Tests:** component tests for all four states of each data view, API-client unit tests, Playwright journeys, accessibility checks, and a build step with `tsc --noEmit`.
 - **Review:** checklist items in [REVIEW.md](../engineering/REVIEW.md).
