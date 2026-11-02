@@ -50,11 +50,12 @@ Permissions are modeled as fine-grained permission strings (`booking.approve`, `
 
 - Passwords: Argon2id (or bcrypt cost ≥ 12 if Argon2 unavailable), breached-password check, no composition rules beyond length ≥ 10.
 - Phone/email verification with hashed, short-lived, attempt-limited codes; SMS pumping protection (per-number and per-IP limits, country allow-list).
-- JWT access tokens: ≤ 15 min, asymmetric signing (rotatable keys, `kid`), audience-bound, minimal claims (subject, audience, session id, org memberships summary not authoritative for writes — permissions re-checked from DB or short cache).
+- JWT access tokens: ≤ 15 min, ES256 signing (ADR-31; rotatable keys, `kid`), audience-bound, minimal claims (subject, audience, session id, org memberships summary not authoritative for writes — permissions re-checked from DB or short cache).
 - Refresh tokens: opaque, hashed at rest, rotating, reuse detection revokes the family; bound to device record.
 - Admin: mandatory TOTP/WebAuthn second factor; short sessions; no self-registration.
 - Account lockout/backoff on repeated failures; uniform error messages (no user enumeration).
-- Whether to adopt an external IdP is open `[OD-10]`; the identity module's API isolates the choice.
+- Implemented in Slice A: ES256 access tokens (ADR-31), rotating refresh tokens with reuse detection, per-audience filter chains with deny-by-default routes and a fixed-window per-address rate limiter (ADR-34), progressive account lockout, uniform failures, TOTP admin second factor with encrypted seeds and recovery codes, and the audit trail (ADR-32). Lifetimes and thresholds are typed configuration.
+- Identity is in-house (ADR-30). Sessions, lockout, verification and reset rules, the admin second-factor step and the audit events are specified in docs/superpowers/specs/2026-11-02-phase1-slice-a-identity-audit-design.md; values (lifetimes, thresholds) are typed configuration, not code.
 
 ## 4. Data protection in transit and at rest
 

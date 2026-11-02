@@ -22,14 +22,14 @@ Nothing here may be silently decided by implementers. Resolve by updating the re
 | OD-7 | Penalties/ranking impact for vendor-initiated cancellations | Full refund to guest; penalty rules TBD | Phase 2 |
 | OD-8 | Location privacy for private homes (approximate vs exact until confirmed) | Approximate until `CONFIRMED` | Phase 1 (catalog) |
 | OD-9 | Identity model: one person across customer/vendor/admin contexts; membership in several organizations; custom vendor roles | Distinct account kinds per audience; fixed five vendor roles; multiple memberships allowed | Phase 1 |
-| OD-10 | Build identity in-house vs adopt external IdP | In-house `identity` module behind API | Phase 0 |
+| OD-10 | ~~Build identity in-house vs adopt external IdP~~ **Decided: in-house** (ADR-30) | In-house `identity` module behind API | Closed |
 | OD-11 | Pricing rule scope at launch (weekday, length-of-stay, per-guest supplements, closed-to-arrival, min/max stay, extra-bed fees) | Season, weekday, date override, min/max stay, per-guest supplements | Phase 2 |
 | OD-12 | iCal / channel-manager synchronization | Post-launch | Future |
 | OD-13 | Scope of vendor-created campaigns and platform rules (max discount, stacking, funding) | Within plan entitlement; one code per booking | Phase 4 |
 | OD-14 | Quantified SLOs, p95 latency targets, availability, RPO/RTO, mutation-score targets, performance budgets | None set | Phase 2 exit |
 | OD-15 | Cloud provider, region, hosting model for web apps, admin network restriction; data residency | Cloud-agnostic containers | Phase 0 |
 | OD-16 | Cross-border bookings, display-currency conversion | Out of scope at launch | Phase 5 |
-| OD-17 | Hash-chained / WORM audit log | Append-only privileges; hash chain optional | Phase 1 |
+| OD-17 | Hash-chained / WORM audit log. Slice A ships append-only storage without hash chaining (ADR-32); revisit before public launch | Append-only privileges; hash chain optional | Before launch |
 | OD-18 | **Payment provider selection** (card PSP, Airtel/Moov route, marketplace collection + settlement provider). Not selected. Research and C1–C15 capability checklist in [PAYMENT_PROVIDER_RESEARCH.md](architecture/PAYMENT_PROVIDER_RESEARCH.md); main gaps: split/vendor settlement undocumented, Moov Gabon unconfirmed, refunds undocumented for some candidates | None selected; provider-neutral core built against a simulator | Phase 2 (live adapters) |
 | OD-19 | Room assignment timing (at booking vs later); selling entire property and parts simultaneously | Type-level booking, assignment later; composite blocking supported | Phase 2 |
 | OD-20 | Email/SMS/push providers per country | Unselected | Phase 1 (notification) |
@@ -87,4 +87,6 @@ No legal or regulatory conclusion is assumed in any document. Each item needs qu
 | R-13 | Data protection/retention non-compliance | Medium / High | L-5 to L-7 resolved before launch; retention jobs; privacy-by-design |
 | R-14 | Time-zone and date-boundary bugs in stays and cancellation tiers | Medium / Medium | Property-local `date` semantics, injected clock, boundary tests |
 | R-16 | Cloudinary cannot meet private-document requirements (raw/PDF authenticated delivery, malware scanning, data location) or incurs unexpected cost from uncontrolled transformations | Medium / High | OD-29 spike before building document upload; named variants only; documented fallback options in MEDIA_ARCHITECTURE §4; a new ADR if documents need a different store |
+| R-17 | The bundled password denylist (`identity/password-denylist.txt`) is a starter list, so weak passwords outside it are accepted | High / Medium | Replace with a vetted large corpus before public launch; consider an online k-anonymity breach check behind a port (security review first) |
+| R-18 | `X-Forwarded-For` is trusted for rate limiting and audit IP addresses; a backend reachable directly could be spoofed | Medium / High | Deploy only behind a proxy that overwrites the header; network policy blocks direct access ([DEVOPS.md](engineering/DEVOPS.md) section 12) |
 | R-15 | Over-engineering (premature Kafka, extra abstractions) | Medium / Medium | ADR triggers; "no unnecessary abstractions" review gate |

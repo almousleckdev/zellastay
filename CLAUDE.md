@@ -6,7 +6,7 @@ Stack: Java 21 + Spring Boot + Spring Modulith (modular monolith), PostgreSQL, R
 
 ## Current phase
 
-Documentation is approved with decisions ADR-13 (approve-then-pay) and ADR-20 (non-custodial funds flow) recorded. **Phase 0 (backend foundation) is implemented but not yet approved; Phase 1 is blocked until the user approves Phase 0.** Booking, payments, subscriptions and all frontends are NOT started** and must not be started until the user approves a roadmap phase (`docs/product/ROADMAP.md`). No live payment transaction may ever run before legal item L-1 is closed, and no payment provider is selected (OD-18).
+Documentation is approved with decisions ADR-13 (approve-then-pay) and ADR-20 (non-custodial funds flow) recorded. **Phase 0 (backend foundation) is approved. Phase 1 is in progress, slice by slice (A identity and audit, B organizations and staff, C verification, D catalog, E room types and units, F media); Slice A (identity and audit) is implemented and awaiting review; each slice is reported before the next starts (see `docs/superpowers/plans/2026-11-02-phase1-slice-a-identity-audit-plan.md`).** Booking, payments, subscriptions and all frontends are NOT started** and must not be started until the user approves a roadmap phase (`docs/product/ROADMAP.md`). No live payment transaction may ever run before legal item L-1 is closed, and no payment provider is selected (OD-18).
 
 ## Documentation map (read before changing anything)
 

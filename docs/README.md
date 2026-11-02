@@ -31,6 +31,10 @@ Reading order for newcomers: PRD → Business model → Booking lifecycle → Sy
 ## Engineering (`engineering/`)
 [CODING_STANDARDS.md](engineering/CODING_STANDARDS.md) · [TESTING_STRATEGY.md](engineering/TESTING_STRATEGY.md) · [DEVOPS.md](engineering/DEVOPS.md) · [CI_CD.md](engineering/CI_CD.md) · [OBSERVABILITY.md](engineering/OBSERVABILITY.md) · [REVIEW.md](engineering/REVIEW.md) · [ERROR_HANDLING.md](engineering/ERROR_HANDLING.md) · [STANDARDS_ENFORCEMENT.md](engineering/STANDARDS_ENFORCEMENT.md)
 
+## Phase 1 working documents (`superpowers/`)
+- [Slice A design: Identity and Audit](superpowers/specs/2026-11-02-phase1-slice-a-identity-audit-design.md)
+- [Slice A implementation plan](superpowers/plans/2026-11-02-phase1-slice-a-identity-audit-plan.md)
+
 ## Decisions
 - [DECISIONS.md](DECISIONS.md) — accepted architecture decisions
 - [OPEN_DECISIONS.md](OPEN_DECISIONS.md) — open business/technical decisions, `[LEGAL]` register, risks

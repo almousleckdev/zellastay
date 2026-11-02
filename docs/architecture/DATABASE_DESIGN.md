@@ -37,14 +37,14 @@ Key columns only. `+std` = standard columns (id, created_at, updated_at, version
 - Every config table is versioned or has validity ranges; bookings snapshot what they used.
 
 ### audit
-- `audit_event(id, occurred_at, actor_type, actor_id, actor_org_id, action, subject_type, subject_id, outcome, ip, user_agent, correlation_id, details jsonb)` — append-only, partitioned by month, no UPDATE/DELETE grants to the app role.
+- `audit_event(id, occurred_at, actor_type, actor_id, actor_org_id, action, subject_type, subject_id, outcome, ip, user_agent, correlation_id, details jsonb)` — append-only: a trigger rejects `UPDATE`/`DELETE`/`TRUNCATE` (also on every partition), monthly range partitions on `occurred_at` are created by `audit_ensure_partition` (scheduled job keeps `zellastay.audit.partitions-ahead` months ready; a default partition catches stragglers and is reported), and deployed environments also run the application with a role that has no `UPDATE`/`DELETE`/`TRUNCATE` grant. `ip` and `user_agent` are personal data (retention `[LEGAL]`).
 
 ### ident (identity)
 - `ident_account(id, kind {CUSTOMER, VENDOR_USER, ADMIN}, email, email_verified_at, phone_e164, phone_verified_at, password_hash, status, locale, country, ...)` — unique (lower(email)) and unique phone where not null, partial per kind
 - `ident_profile(account_id, first_name, last_name, avatar_media_id, date_of_birth?, ...)` `[LEGAL]` for which fields are collected
-- `ident_refresh_token(id, account_id, token_hash, family_id, expires_at, revoked_at, replaced_by, device_id)`
-- `ident_credential_event`, `ident_verification_code(subject, purpose, code_hash, expires_at, attempts)`
-- `ident_admin_role(account_id, role)`; `ident_device(id, account_id, platform, push_token, last_seen_at)`
+- `ident_session(id, account_id, audience, mfa_verified, created_at, absolute_expires_at, idle_timeout_seconds, last_used_at, revoked_at, revoked_reason)` is the login; `ident_refresh_token(id, session_id, token_hash, issued_at, used_at, replaced_by)` holds its rotation chain (a session is the token family). Account status values `PENDING_VERIFICATION, ACTIVE, SUSPENDED, DEACTIVATED, ANONYMIZED`; email unique per `(kind, email)`
+- `ident_challenge(id, account_id, purpose {EMAIL_VERIFICATION, PASSWORD_RESET, ADMIN_MFA_LOGIN}, secret_hash, expires_at, attempts, consumed_at, created_at)` replaces `ident_verification_code`; codes are HMAC-hashed with a server pepper, link tokens and MFA tickets are SHA-256 hashed; credential events are written to `audit_event`
+- `ident_admin_role(account_id, role, granted_at)`; `ident_admin_role_permission(role, permission)` is reference data mapping roles to permissions (Slice A seeds only `SUPER_ADMIN`); `ident_admin_mfa(account_id, secret_ciphertext, enrolled_at, last_used_step)` with the authenticator seed AES-GCM encrypted; `ident_recovery_code(account_id, code_hash, used_at)`; `ident_device
 - `ident_booking_access_token(id, booking_id, token_hash, expires_at, revoked_at)` (guest access)
 - Notification preferences are owned by `notif_` (`notif_preference`), not identity.
 

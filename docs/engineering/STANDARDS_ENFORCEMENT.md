@@ -19,9 +19,9 @@ Every mandatory engineering rule needs a mechanism that fails the build, or an e
 | Rules actually detect violations | `ArchitectureRulesDetectViolationsTest` runs every rule against violating fixtures and a clean fixture | Active |
 | Files focused and small (≤ 300 lines) | `SourceFileSizeTest` | Active |
 | Formatting, `-Xlint:all -Werror` | Spotless, compiler flags | Active |
-| Secrets never committed | `.gitignore`, gitleaks run during verification; CI secret scanning | Planned (CI job with Phase 1) |
+| Secrets never committed | `.gitignore`, gitleaks run during verification; identity secrets exist only as files or environment variables; CI secret scanning | Planned (CI job with Phase 1) |
 | Media: signature construction, size enforcement, private URL authorization, cleanup | Media module tests (see MEDIA_ARCHITECTURE §10) | Planned (Phase 1) |
-| Authorization tests for every endpoint (allowed, denied, cross-tenant) | Route-catalog driven test | Planned (with `identity`, Phase 1) |
+| Every served route is protected or deliberately public (deny by default): `RouteCatalogTest` enumerates all handler mappings against the audience routes registered by modules and an explicit public allow-list; proven by `RouteCatalogUnitTest`. Allowed/denied/cross-audience behavior per endpoint is covered by the identity integration tests | Active (Slice A); every later slice registers its routes and adds its cross-tenant tests |
 
 ## 2. Flutter
 

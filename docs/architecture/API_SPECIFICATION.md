@@ -34,14 +34,20 @@ Conventions and endpoint catalog. The OpenAPI 3.1 document generated from code (
 
 | Method | Path | Notes |
 |---|---|---|
-| POST | `/api/v1/auth/register` | Customer registration (email or phone) |
-| POST | `/api/v1/auth/verify` | Verify email/phone code |
+| POST | `/api/v1/auth/register` | Customer registration (email only until OD-20; identical `202` response whether or not the email exists) |
+| POST | `/api/v1/auth/verify` | Verify the email code |
+| POST | `/api/v1/auth/verify/resend` | Resend the code (cooldown and hourly cap) |
 | POST | `/api/v1/auth/login` | Returns access + refresh token |
 | POST | `/api/v1/auth/refresh` | Rotating refresh; reuse detection revokes family |
 | POST | `/api/v1/auth/logout` | Revoke refresh token |
 | POST | `/api/v1/auth/password/forgot`, `/reset` | |
-| POST | `/api/v1/vendor/auth/login`, `/api/v1/admin/auth/login` | Separate audiences; admin requires second factor |
-| POST | `/api/v1/vendor/auth/register` | Vendor self-registration (individual/business) |
+| POST | `/api/v1/vendor/auth/login`, `/api/v1/admin/auth/login` | Separate audiences; admin login is two steps (password, then `POST /api/v1/admin/auth/mfa/verify`) |
+| POST | `/api/v1/vendor/auth/register` | Creates a vendor user account only; the organization (individual host or business) is created afterwards by `POST /api/v1/vendor/organizations` (Slice B) |
+| GET/DELETE | `/api/v1/me/sessions`, `/api/v1/me/sessions/{id}` | List own sessions; sign out everywhere (`DELETE` on the collection) or end one session. Same under `/api/v1/vendor/me/` and `/api/v1/admin/me/` |
+| POST | `/api/v1/me/password`, `/api/v1/me/deactivation` | Change password (current password required; other sessions revoked); close own account (password required). Also under `/vendor/me/`; password change also under `/admin/me/` |
+| POST | `/api/v1/{,vendor/,admin/}auth/password/forgot`, `/reset` | Recovery per audience; `reset` takes `{token, newPassword}`; always `202` for `forgot` |
+| POST | `/api/v1/admin/auth/mfa/enroll`, `/mfa/verify` | Second step of admin sign-in with the `mfaTicket` returned by `/admin/auth/login`; `verify` takes a six-digit `code` or a one-time `recoveryCode`; first successful enrolment returns ten recovery codes once |
+| POST/DELETE/GET | `/api/v1/admin/accounts` (create admin), `/{id}/roles[/{role}]`, `/{id}/suspension`, `/{id}/sessions`, `/api/v1/admin/audit-events` | Permission-gated (`admin.manage`, `account.suspend`, `account.reinstate`, `session.revoke`, `audit.read`); authorization enforced in the application layer; every mutation audited |
 
 ## 3. Resource catalog
 

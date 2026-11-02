@@ -10,9 +10,9 @@ Consumers marked `*` are planned; the event is defined only when the consuming f
 |---|---|---|---|---|
 | platformconfig | `ConfigurationChanged` | Versioned config change | key, scope, version | search*, pricing* |
 | identity | `AccountRegistered` | Account created | accountId, kind, locale | notification |
-| identity | `VerificationCodeRequested` | OTP/email verification requested | accountId or contact ref, purpose, channelHint | notification |
-| identity | `PasswordResetRequested` | Reset requested | accountId | notification |
-| identity | `AccountSuspended` / `AccountReinstated` | Admin action | accountId | chat*, organization* |
+| identity | `VerificationCodeRequested` | Email verification requested | accountId, purpose, channelHint (**never the code**; the secret is passed through the `VerificationDelivery` port, ADR-30) | notification |
+| identity | `PasswordResetRequested` | Reset requested | accountId (never the reset token) | notification |
+| identity | `AccountSuspended` / `AccountReinstated` / `AccountDeactivated` | Admin action, or the user closing the account | accountId | chat*, organization* |
 | media | `MediaReady` / `MediaRejected` | Scan/processing finished | mediaId, ownerRef | catalog*, onboarding*, chat* |
 | onboarding | `VerificationSubmitted` | Case submitted | caseId, subjectRef, country | notification |
 | onboarding | `VerificationDecided` | Approve or reject | caseId, subjectRef, decision, reasonCodes | organization, catalog, subscription, notification |
