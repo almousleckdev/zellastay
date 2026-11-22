@@ -1,6 +1,6 @@
 # Public Booking Website (Next.js + TypeScript)
 
-Directory: `apps/public-web`. Audience: visitors, customers, guests, and prospective vendors (vendor self-registration lives here).
+Directory: `web/website`. Audience: visitors, customers, guests, and prospective vendors (vendor self-registration lives here).
 
 ## 1. Scope
 

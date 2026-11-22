@@ -1,15 +1,11 @@
 package com.zellastay.identity.application;
 
-import com.zellastay.audit.api.AuditEntry;
-import com.zellastay.audit.api.AuditOutcome;
-import com.zellastay.audit.api.AuditRecorder;
 import com.zellastay.identity.api.AccountNotFoundException;
 import com.zellastay.identity.api.CurrentPasswordInvalidException;
 import com.zellastay.identity.api.CurrentPrincipal;
 import com.zellastay.identity.domain.Account;
 import com.zellastay.identity.domain.AccountRepository;
 import com.zellastay.identity.domain.PasswordHasher;
-import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -21,7 +17,7 @@ public class DeactivateAccountService {
   private final PasswordHasher hasher;
   private final SessionRevoker revoker;
   private final IdentityEvents events;
-  private final AuditRecorder audit;
+  private final IdentityAuditTrail trail;
   private final TransactionTemplate transaction;
 
   DeactivateAccountService(
@@ -29,13 +25,13 @@ public class DeactivateAccountService {
       PasswordHasher hasher,
       SessionRevoker revoker,
       IdentityEvents events,
-      AuditRecorder audit,
+      IdentityAuditTrail trail,
       TransactionTemplate transaction) {
     this.accounts = accounts;
     this.hasher = hasher;
     this.revoker = revoker;
     this.events = events;
-    this.audit = audit;
+    this.trail = trail;
     this.transaction = transaction;
   }
 
@@ -53,13 +49,7 @@ public class DeactivateAccountService {
           accounts.update(account);
           revoker.revokeAll(account.id(), "account-deactivated");
           events.deactivated(account.id().value());
-          audit.record(
-              new AuditEntry(
-                  AuditActors.actor(account),
-                  IdentityAuditAction.ACCOUNT_DEACTIVATED,
-                  AuditActors.subject(account),
-                  AuditOutcome.SUCCESS,
-                  Map.of()));
+          trail.succeeded(account, IdentityAuditAction.ACCOUNT_DEACTIVATED);
         });
   }
 }

@@ -1,0 +1,16 @@
+{
+  "maxLines": 280,
+  "roots": ["backend/src", "web", "packages", "client/lib", "client/test"],
+  "extensions": [".java", ".ts", ".tsx", ".dart", ".css"],
+  "excludeDirs": [
+    "node_modules",
+    ".next",
+    ".turbo",
+    "build",
+    ".gradle",
+    ".dart_tool",
+    "dist",
+    "coverage"
+  ],
+  "excludeSuffixes": [".g.dart", ".freezed.dart", ".d.ts"]
+}

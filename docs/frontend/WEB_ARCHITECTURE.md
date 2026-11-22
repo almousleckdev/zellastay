@@ -5,7 +5,7 @@ Mandatory for all three web apps. App-specific scope is in [PUBLIC_WEBSITE.md](P
 ## 1. Principles
 
 1. **Feature-oriented.** Code is organized by business feature, not by technical type at the top level.
-2. **One responsibility per file; small files.** At most 300 lines per file and about 40 per function; oversized files are refactored, not exempted.
+2. **One responsibility per file; small files.** At most 280 lines per file (ADR-43) and about 40 per function; oversized files are refactored, not exempted.
 3. **No duplication.** UI components, API access, validation schemas and business logic each exist once, in the shared package or in one feature. Duplicates found in review are blockers.
 4. **Strict TypeScript.** `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`; no `any`, no `@ts-ignore`; `unknown` plus narrowing at boundaries; API types come from the generated client, runtime validation with shared schemas.
 5. **Consistent states.** Every data-dependent view implements loading, error, empty and success states using shared components.
@@ -13,8 +13,10 @@ Mandatory for all three web apps. App-specific scope is in [PUBLIC_WEBSITE.md](P
 
 ## 2. Workspace layout
 
+**Directory names (ADR-44):** the apps live in `web/website` (public site), `web/vendor` and `web/admin`; shared packages in `packages/` are `ui`, `design-tokens`, `icons`, `utilities`, `api-client` and `config`. `schemas`, `i18n` and `media` are added when their first consumer exists. Wherever this document writes `apps/<app>`, read `web/<app>`; the earlier names `public-web`, `vendor-dashboard`, `admin-dashboard` map to `website`, `vendor`, `admin`. Each app uses a `src/` directory. `utilities` holds narrow pure helpers only (class-name merging, locale formatting, accessibility helpers); business logic never goes there. The current `web/*` directories are unmodified `create-next-app` scaffolds with separate lockfiles; they become one pnpm and Turborepo workspace in the workspace step of [DEVELOPMENT_PROCESS.md](../engineering/DEVELOPMENT_PROCESS.md).
+
 ```
-apps/<app>/src/
+web/<app>/src/
   app/                    Routes only: page/layout/loading/error/not-found. Thin; compose features
   features/<feature>/
     ui/                   Presentational components (one per file)
@@ -69,7 +71,7 @@ New shared component or hook: justified by a second use or by design-system scop
 
 ## 6. Enforcement
 
-- **Lint (set up with the first app):** `@typescript-eslint/no-explicit-any`, `ban-ts-comment`, `max-lines` (300) and `max-lines-per-function` (40), `no-restricted-imports` (raw HTTP clients, other apps, deep imports into other features), `jsx-a11y`, import-cycle detection (`import/no-cycle` or `dependency-cruiser`), and a custom rule for hardcoded user-visible strings.
+- **Lint (set up with the first app):** `@typescript-eslint/no-explicit-any`, `ban-ts-comment`, `max-lines` (280, blank lines and comments counted) and `max-lines-per-function` (40), `no-restricted-imports` (raw HTTP clients, other apps, deep imports into other features), `jsx-a11y`, import-cycle detection (`import/no-cycle` or `dependency-cruiser`), and a custom rule for hardcoded user-visible strings.
 - **Repository checks (added with the first app):** file size, raw HTML, Cloudinary/secret names and secret-like `NEXT_PUBLIC_*` variables, and env files in apps, enforced through ESLint rules, dependency-cruiser and CI secret scanning.
 - **Tests:** component tests for all four states of each data view, API-client unit tests, Playwright journeys, accessibility checks, and a build step with `tsc --noEmit`.
 - **Review:** checklist items in [REVIEW.md](../engineering/REVIEW.md).

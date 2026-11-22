@@ -16,19 +16,19 @@
 | Module | Owns (responsibility) |
 |---|---|
 | `shared` | Shared kernel (see rule 7). |
-| `platformconfig` | Countries, currencies, locales, time zones, tax rules, required-document sets, enabled payment methods per country, service-fee rules, platform parameters (timers, thresholds), feature flags. |
+| `platformconfig` | **Registries and configuration infrastructure only (ADR-36):** country registry, market lifecycle and activation (with the `MarketReadinessCheck` SPI), currency, locale, time-zone and jurisdiction registries, global platform parameters (timers, thresholds), feature flags. Business rules live in the module that interprets them; see [MULTI_COUNTRY.md](MULTI_COUNTRY.md). |
 | `audit` | Append-only audit log: recording API and admin query. |
 | `identity` | Accounts (customer, vendor user, admin), credentials, sessions/refresh tokens, verification (email/phone), device registrations, guest booking-access tokens, platform roles, user profile and preferences root. |
 | `media` | The only module that talks to Cloudinary: upload intents and server-proxied uploads, validation and scanning, asset records (public IDs and metadata), variants, private signed URLs, deletion, replacement and orphan cleanup. See [MEDIA_ARCHITECTURE.md](MEDIA_ARCHITECTURE.md). |
-| `onboarding` | Verification cases (subject = organization or property, by opaque reference), submissions with versions, document requirements checklist, reviewer decisions, rejection reasons, resubmission history. |
-| `payment` | Provider abstraction, payment attempts, payments, refunds, ledger (accounting mirror), webhooks, reconciliation, settlement beneficiaries and settlement records, idempotency for payment operations. Admin-facing endpoints only; vendor-facing views live in `organization` (beneficiary setup) and `reporting` (settlement statements) to keep the graph acyclic. |
-| `subscription` | Plans, prices, entitlements, vendor subscriptions, subscription invoices, lifecycle, `EntitlementApi`. |
+| `onboarding` | Verification cases (subject = organization or property, by opaque reference), submissions with versions, document requirements checklist **(country document requirements are owned here, ADR-36)**, reviewer decisions, rejection reasons, resubmission history. |
+| `payment` | Provider abstraction, **payment methods, provider configuration and routing (ADR-36)**, payment attempts, payments, refunds, ledger (accounting mirror), webhooks, reconciliation, settlement beneficiaries and settlement records, idempotency for payment operations. Admin-facing endpoints only; vendor-facing views live in `organization` (beneficiary setup) and `reporting` (settlement statements) to keep the graph acyclic. |
+| `subscription` | Plans, prices, entitlements, vendor subscriptions, subscription invoices and **the tax rules applied to them**, lifecycle, `EntitlementApi`. |
 | `organization` | Vendor organizations (tenants), members, roles, property scopes, invitations, permission evaluation (`VendorAccessApi`). |
-| `catalog` | Properties (type, address, geolocation, content, amenities, rules, check-in instructions, cancellation policy selection, booking mode), property approval state, nearby attractions. |
+| `catalog` | Properties (type, address, geolocation, content, amenities, rules, check-in instructions, booking mode), property approval state, nearby attractions. |
 | `inventory` | Sellable units (room types, rooms, private units), capacity, availability calendar, holds and allocations (double-booking prevention). |
-| `pricing` | Rate plans, seasonal rules, fees (cleaning, deposit), taxes application, **quote** computation, service fee application. |
+| `pricing` | Rate plans, seasonal rules, fees (cleaning, deposit), **tax rules and their application, customer service fee and vendor commission rules (commission disabled by default, ADR-35)**, **quote** computation. |
 | `promotion` | Promo codes, vouchers, campaigns (platform and vendor), discount evaluation and redemption ledger. |
-| `booking` | Booking aggregate, state machine, cancellation policy evaluation, refund computation, booking history, orchestration of quote → hold → payment. |
+| `booking` | Booking aggregate, state machine, **cancellation policies and templates and each property's selected policy (ADR-36)**, cancellation policy evaluation, refund computation, booking history, orchestration of quote → hold → payment. |
 | `search` | Search read model (denormalized, fed by events), filters, geo search, ranking. |
 | `engagement` | Favorites and wishlists. |
 | `review` | Reviews, ratings aggregates, vendor responses, moderation state. |
@@ -67,11 +67,11 @@ identity              → shared, platformconfig, audit
 media                 → shared, identity, audit
 payment               → shared, platformconfig, identity, audit
 onboarding            → shared, platformconfig, identity, media, audit
-subscription          → shared, platformconfig, payment, onboarding, audit
+subscription          → shared, platformconfig, identity, payment, onboarding, audit
 organization          → shared, identity, onboarding, subscription, payment, audit
 catalog               → shared, platformconfig, organization, onboarding, subscription, media, audit
 inventory             → shared, catalog, organization, subscription, audit
-pricing               → shared, platformconfig, inventory, audit
+pricing               → shared, platformconfig, identity, inventory, audit
 promotion             → shared, platformconfig, organization, catalog, audit
 booking               → shared, platformconfig, identity, organization, catalog, inventory, pricing, promotion, payment, audit
 engagement            → shared, identity, catalog
@@ -101,6 +101,7 @@ L10 notification, reporting
 ```
 
 Notes that resolve potential cycles:
+- **Configuration ownership (ADR-36):** `platformconfig` holds registries only. `platformconfig` checks administrator permissions through a port in `shared.security` that `identity` implements (so no `platformconfig`/`identity` cycle), and collects market-readiness checks through the `MarketReadinessCheck` SPI that owning modules implement (no upward dependency). `catalog` cannot depend on `booking`, so the property's selected cancellation policy is stored by `booking`. `subscription` sits below `pricing`, so subscription invoices use their own tax rules. `pricing` and `subscription` depend on `identity` only for administrator permission checks.
 - **Payment never depends on booking or subscription.** Callers pass an opaque `PaymentReference(type, id)`; payment emits `PaymentSucceeded/Failed`, `RefundSucceeded/Failed` carrying that reference; booking and subscription listen. Booking requests refunds by calling `PaymentApi.requestRefund` inside its cancellation transaction.
 - **Onboarding is subject-agnostic.** It stores verification cases with opaque subject refs and a display snapshot; organization and catalog submit cases and listen to `VerificationDecided`. Subscription listens to `VerificationDecided` (subject = organization) to start a trial.
 - **Entitlement checks** flow downward only: organization, catalog, inventory call `EntitlementApi` (subscription); subscription never imports them.
@@ -108,7 +109,7 @@ Notes that resolve potential cycles:
 - **Notification** depends on no business module's internals; it only consumes the published events of the modules on its line above (the list is exhaustive and tested) and reads recipient contact data via `identity` API. No module depends on notification, so adding a notifiable event never creates a cycle.
 - **Search** is a read model: it consumes events and never calls back.
 
-The enforced version of this graph lives in a test class (`ModuleDependencyRulesTest`) generated from this table by hand; changing one without the other fails review.
+The enforced version of this graph lives in a test class (`ModuleStructureTest` (which compares the `allowedDependencies` of every `package-info.java` with this section)) generated from this table by hand; changing one without the other fails review.
 
 ## 5. Module interaction patterns
 

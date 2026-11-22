@@ -1,6 +1,6 @@
 # Vendor Dashboard (Next.js + TypeScript)
 
-Directory: `apps/vendor-dashboard`. Audience: staff of vendor organizations (Owner, Administrator, Manager, Receptionist, Accountant). Consumes `/api/v1/vendor/**` and `/ws`. Authentication is separate from the customer apps (vendor token audience).
+Directory: `web/vendor`. Audience: staff of vendor organizations (Owner, Administrator, Manager, Receptionist, Accountant). Consumes `/api/v1/vendor/**` and `/ws`. Authentication is separate from the customer apps (vendor token audience).
 
 ## 1. Information architecture
 

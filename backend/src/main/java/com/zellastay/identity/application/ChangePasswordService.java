@@ -1,8 +1,5 @@
 package com.zellastay.identity.application;
 
-import com.zellastay.audit.api.AuditEntry;
-import com.zellastay.audit.api.AuditOutcome;
-import com.zellastay.audit.api.AuditRecorder;
 import com.zellastay.identity.api.AccountNotFoundException;
 import com.zellastay.identity.api.CurrentPasswordInvalidException;
 import com.zellastay.identity.api.CurrentPrincipal;
@@ -15,7 +12,9 @@ import com.zellastay.identity.domain.PasswordHasher;
 import com.zellastay.identity.domain.PasswordPolicy;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -23,13 +22,15 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Service
 public class ChangePasswordService {
 
+  private static final Logger LOG = LoggerFactory.getLogger(ChangePasswordService.class);
+
   private final AccountRepository accounts;
   private final PasswordHasher hasher;
   private final PasswordPolicy policy;
   private final LockoutPolicy lockout;
   private final SessionRevoker revoker;
   private final QuietDelivery delivery;
-  private final AuditRecorder audit;
+  private final IdentityAuditTrail trail;
   private final TransactionTemplate transaction;
   private final Clock clock;
 
@@ -40,7 +41,7 @@ public class ChangePasswordService {
       LockoutPolicy lockout,
       SessionRevoker revoker,
       QuietDelivery delivery,
-      AuditRecorder audit,
+      IdentityAuditTrail trail,
       TransactionTemplate transaction,
       Clock clock) {
     this.accounts = accounts;
@@ -49,7 +50,7 @@ public class ChangePasswordService {
     this.lockout = lockout;
     this.revoker = revoker;
     this.delivery = delivery;
-    this.audit = audit;
+    this.trail = trail;
     this.transaction = transaction;
     this.clock = clock;
   }
@@ -79,13 +80,7 @@ public class ChangePasswordService {
     account.changePassword(hash, now);
     accounts.update(account);
     revoker.revokeAllExcept(account.id(), principal.sessionId(), "password-changed");
-    audit.record(
-        new AuditEntry(
-            AuditActors.actor(account),
-            IdentityAuditAction.PASSWORD_CHANGED,
-            AuditActors.subject(account),
-            AuditOutcome.SUCCESS,
-            Map.of()));
+    trail.succeeded(account, IdentityAuditAction.PASSWORD_CHANGED);
   }
 
   private void countFailure(Account loaded) {
@@ -96,8 +91,8 @@ public class ChangePasswordService {
             account.recordFailedLogin(clock.instant(), lockout);
             accounts.update(account);
           });
-    } catch (org.springframework.dao.OptimisticLockingFailureException ignored) {
-      // a concurrent update already changed the account; the failure itself is still reported
+    } catch (OptimisticLockingFailureException concurrent) {
+      LOG.info("a concurrent update raced with counting a failed password change");
     }
   }
 }

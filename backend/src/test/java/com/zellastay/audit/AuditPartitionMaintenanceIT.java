@@ -3,7 +3,7 @@ package com.zellastay.audit;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.zellastay.audit.infrastructure.AuditPartitionMaintainer;
-import com.zellastay.audit.infrastructure.AuditPartitionMaintainer.Report;
+import com.zellastay.audit.infrastructure.PartitionMaintenanceReport;
 import com.zellastay.support.IntegrationTest;
 import java.time.Clock;
 import java.time.YearMonth;
@@ -30,7 +30,7 @@ class AuditPartitionMaintenanceIT {
     YearMonth now = YearMonth.now(clock.withZone(ZoneOffset.UTC));
 
     maintainer.ensurePartitions();
-    Report second = maintainer.ensurePartitions();
+    PartitionMaintenanceReport second = maintainer.ensurePartitions();
 
     assertThat(partitionExists(now)).isTrue();
     assertThat(partitionExists(now.plusMonths(1))).isTrue();
@@ -47,7 +47,7 @@ class AuditPartitionMaintenanceIT {
             + " 'test.straggler', 'account', ?, 'SUCCESS')",
         subject);
 
-    Report report = maintainer.ensurePartitions();
+    PartitionMaintenanceReport report = maintainer.ensurePartitions();
 
     assertThat(report.stragglers()).isGreaterThanOrEqualTo(1);
   }

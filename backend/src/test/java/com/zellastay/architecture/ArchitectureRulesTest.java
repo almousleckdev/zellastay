@@ -31,4 +31,9 @@ class ArchitectureRulesTest {
   void modulesAreFreeOfCycles() {
     ArchitectureRules.modulesAreFreeOfCycles(BASE).check(PRODUCTION);
   }
+
+  @Test
+  void packagesAreFreeOfCyclesWithinModules() {
+    ArchitectureRules.packagesAreFreeOfCyclesWithinModules(BASE).check(PRODUCTION);
+  }
 }

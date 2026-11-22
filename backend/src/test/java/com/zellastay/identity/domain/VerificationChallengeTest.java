@@ -6,7 +6,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.zellastay.identity.api.AccountId;
 import com.zellastay.identity.api.ResendTooSoonException;
-import com.zellastay.identity.domain.VerificationChallenge.Result;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
@@ -31,8 +30,9 @@ class VerificationChallengeTest {
   void aMatchingCodeVerifiesOnceOnly() {
     VerificationChallenge challenge = issued();
 
-    assertThat(challenge.check(true, T0.plusSeconds(30), 5)).isEqualTo(Result.VERIFIED);
-    assertThat(challenge.check(true, T0.plusSeconds(31), 5)).isEqualTo(Result.USED);
+    assertThat(challenge.check(true, T0.plusSeconds(30), 5))
+        .isEqualTo(ChallengeCheckResult.VERIFIED);
+    assertThat(challenge.check(true, T0.plusSeconds(31), 5)).isEqualTo(ChallengeCheckResult.USED);
   }
 
   @Test
@@ -40,17 +40,18 @@ class VerificationChallengeTest {
     VerificationChallenge challenge = issued();
 
     for (int i = 0; i < 4; i++) {
-      assertThat(challenge.check(false, T0, 5)).isEqualTo(Result.WRONG);
+      assertThat(challenge.check(false, T0, 5)).isEqualTo(ChallengeCheckResult.WRONG);
     }
-    assertThat(challenge.check(false, T0, 5)).isEqualTo(Result.BURNED);
-    assertThat(challenge.check(true, T0, 5)).isEqualTo(Result.BURNED);
+    assertThat(challenge.check(false, T0, 5)).isEqualTo(ChallengeCheckResult.BURNED);
+    assertThat(challenge.check(true, T0, 5)).isEqualTo(ChallengeCheckResult.BURNED);
   }
 
   @Test
   void anExpiredChallengeNeverVerifies() {
     VerificationChallenge challenge = issued();
 
-    assertThat(challenge.check(true, T0.plus(Duration.ofMinutes(10)), 5)).isEqualTo(Result.EXPIRED);
+    assertThat(challenge.check(true, T0.plus(Duration.ofMinutes(10)), 5))
+        .isEqualTo(ChallengeCheckResult.EXPIRED);
   }
 
   @Test

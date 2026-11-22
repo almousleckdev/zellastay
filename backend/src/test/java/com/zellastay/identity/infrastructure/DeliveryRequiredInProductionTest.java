@@ -3,7 +3,7 @@ package com.zellastay.identity.infrastructure;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.zellastay.ZellaStayApplication;
-import com.zellastay.support.TestInfrastructure;
+import com.zellastay.support.ApplicationTestEnvironment;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -23,8 +23,7 @@ class DeliveryRequiredInProductionTest {
   }
 
   private static void start(String environment) {
-    Map<String, String> settings =
-        new java.util.HashMap<>(TestInfrastructure.applicationEnvironment());
+    Map<String, String> settings = new java.util.HashMap<>(ApplicationTestEnvironment.variables());
     settings.put("ZS_ENVIRONMENT", environment);
     List<String> properties = new ArrayList<>();
     settings.forEach((key, value) -> properties.add(key + "=" + value));

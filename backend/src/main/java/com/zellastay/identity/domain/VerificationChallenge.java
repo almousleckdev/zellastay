@@ -8,14 +8,6 @@ import java.util.UUID;
 /** A one-time secret (code or link token) with expiry and an attempt budget. Stored hashed. */
 public final class VerificationChallenge {
 
-  public enum Result {
-    VERIFIED,
-    WRONG,
-    BURNED,
-    EXPIRED,
-    USED
-  }
-
   private final UUID id;
   private final AccountId accountId;
   private final ChallengePurpose purpose;
@@ -76,22 +68,22 @@ public final class VerificationChallenge {
   /**
    * Records one attempt; {@code matches} says whether the presented secret equals the stored one.
    */
-  public Result check(boolean matches, Instant now, int maxAttempts) {
+  public ChallengeCheckResult check(boolean matches, Instant now, int maxAttempts) {
     if (consumedAt != null) {
-      return Result.USED;
+      return ChallengeCheckResult.USED;
     }
     if (!now.isBefore(expiresAt)) {
-      return Result.EXPIRED;
+      return ChallengeCheckResult.EXPIRED;
     }
     if (attempts >= maxAttempts) {
-      return Result.BURNED;
+      return ChallengeCheckResult.BURNED;
     }
     if (matches) {
       consumedAt = now;
-      return Result.VERIFIED;
+      return ChallengeCheckResult.VERIFIED;
     }
     attempts++;
-    return attempts >= maxAttempts ? Result.BURNED : Result.WRONG;
+    return attempts >= maxAttempts ? ChallengeCheckResult.BURNED : ChallengeCheckResult.WRONG;
   }
 
   public UUID id() {

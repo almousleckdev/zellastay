@@ -20,7 +20,7 @@ class InMemoryRateLimitCounter implements RateLimitCounter {
   }
 
   @Override
-  public Hit hit(String key, Duration window) {
+  public RateLimitHit hit(String key, Duration window) {
     Instant now = clock.instant();
     if (windows.size() > CLEANUP_THRESHOLD) {
       windows.values().removeIf(w -> !now.isBefore(w.start().plus(window)));
@@ -33,6 +33,6 @@ class InMemoryRateLimitCounter implements RateLimitCounter {
                 now.isBefore(existing.start().plus(window))
                     ? new Window(existing.start(), existing.count() + 1)
                     : fresh);
-    return new Hit(current.count(), Duration.between(now, current.start().plus(window)));
+    return new RateLimitHit(current.count(), Duration.between(now, current.start().plus(window)));
   }
 }

@@ -2,7 +2,6 @@ package com.zellastay.identity.web;
 
 import com.zellastay.identity.api.CurrentPrincipal;
 import com.zellastay.identity.application.DeactivateAccountService;
-import com.zellastay.identity.web.AdminDtos.PasswordRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

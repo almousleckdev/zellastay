@@ -5,7 +5,15 @@
 1. **Customer service fee** on each successful booking, charged to the customer on top of the accommodation price.
 2. **Vendor subscriptions**, monthly or annual, in tiers Basic, Professional and Enterprise.
 
-**There is no per-booking commission charged to hotels or hosts in the initial model.** Any change requires an approved update to this document and the pricing module.
+**There is no per-booking commission charged to hotels or hosts in the initial model.** The platform nevertheless supports a configurable vendor commission, **disabled by default** (ADR-35, approved 2026-11-21): this document's model is unchanged until a commission is explicitly activated for a market by an approved, audited configuration change.
+
+### Commission and fee rules (supported, off by default)
+
+- Customer service fee and vendor commission are both fee rules owned by the `pricing` module. Each rule has a kind (service fee or commission), a payer (customer or vendor), a shape (percentage, fixed, percentage with minimum and maximum), a market and currency, a validity range and a version.
+- A rule can be enabled or disabled per market independently. No percentage is hardcoded.
+- A booking stores an immutable snapshot of the rules applied when it was created; later rule changes never alter history.
+- Open: the commission base, cancellation and refund treatment, and vendor-side invoicing `[OD-31]`; tax treatment `[LEGAL]` (L-4, L-19). Settlement of any commission follows ADR-20 (through the provider's split mechanism, never through Zella Stay holding funds).
+- Rules can differ by market; no country is assumed to share another's commercial or regulatory rules ([MULTI_COUNTRY.md](../architecture/MULTI_COUNTRY.md)).
 
 ## 2. Customer service fee
 

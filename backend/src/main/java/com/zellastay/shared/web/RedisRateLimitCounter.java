@@ -14,7 +14,7 @@ class RedisRateLimitCounter implements RateLimitCounter {
   }
 
   @Override
-  public Hit hit(String key, Duration window) {
+  public RateLimitHit hit(String key, Duration window) {
     String redisKey = PREFIX + key;
     Long count = redis.opsForValue().increment(redisKey);
     if (count == null) {
@@ -26,8 +26,8 @@ class RedisRateLimitCounter implements RateLimitCounter {
     Long millis = redis.getExpire(redisKey, java.util.concurrent.TimeUnit.MILLISECONDS);
     if (millis == null || millis < 0) {
       redis.expire(redisKey, window);
-      return new Hit(count, window);
+      return new RateLimitHit(count, window);
     }
-    return new Hit(count, Duration.ofMillis(millis));
+    return new RateLimitHit(count, Duration.ofMillis(millis));
   }
 }

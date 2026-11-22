@@ -1,16 +1,13 @@
 package com.zellastay.identity.web;
 
 import com.zellastay.identity.api.CurrentPrincipal;
-import com.zellastay.identity.application.SessionGuard;
-import com.zellastay.identity.domain.AccessTokens;
-import com.zellastay.identity.domain.AccessTokens.TokenClaims;
+import com.zellastay.identity.application.BearerTokenAuthenticator;
 import com.zellastay.shared.security.TokenAudience;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.time.Clock;
 import java.util.Optional;
 import org.slf4j.MDC;
 import org.springframework.security.core.context.SecurityContext;
@@ -28,22 +25,16 @@ class BearerAuthenticationFilter extends OncePerRequestFilter {
   private static final String MDC_ACCOUNT = "accountId";
 
   private final TokenAudience audience;
-  private final AccessTokens tokens;
-  private final SessionGuard sessions;
+  private final BearerTokenAuthenticator authenticator;
   private final PrincipalAuthorities authorities;
-  private final Clock clock;
 
   BearerAuthenticationFilter(
       TokenAudience audience,
-      AccessTokens tokens,
-      SessionGuard sessions,
-      PrincipalAuthorities authorities,
-      Clock clock) {
+      BearerTokenAuthenticator authenticator,
+      PrincipalAuthorities authorities) {
     this.audience = audience;
-    this.tokens = tokens;
-    this.sessions = sessions;
+    this.authenticator = authenticator;
     this.authorities = authorities;
-    this.clock = clock;
   }
 
   @Override
@@ -64,12 +55,7 @@ class BearerAuthenticationFilter extends OncePerRequestFilter {
     if (header == null || !header.startsWith(PREFIX)) {
       return Optional.empty();
     }
-    Optional<TokenClaims> claims =
-        tokens.parse(header.substring(PREFIX.length()).strip(), audience, clock.instant());
-    return claims
-        .filter(c -> sessions.isUsable(c.sessionId()))
-        .map(
-            c -> new CurrentPrincipal(c.accountId(), c.audience(), c.sessionId(), c.mfaVerified()));
+    return authenticator.authenticate(header.substring(PREFIX.length()).strip(), audience);
   }
 
   private void establish(CurrentPrincipal principal) {

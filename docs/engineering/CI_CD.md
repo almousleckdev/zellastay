@@ -1,6 +1,6 @@
 # CI/CD (GitHub Actions)
 
-Implemented in Phase 0: `backend-ci` (format check, compile with `-Xlint:all -Werror`, unit/architecture/integration tests on Testcontainers, JaCoCo report, container image build), `docs-ci` (`infra/tools/check-docs.py`: links, decision references, AI-attribution scan) and Dependabot (Gradle, GitHub Actions, Docker). All third-party actions are pinned by commit SHA. The remaining pipelines below are created with their components.
+Deployment to Railway (build once, promote the same image digest, production behind an approval gate) is specified in [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) §4. Implemented in Phase 0: `backend-ci` (format check, compile with `-Xlint:all -Werror`, unit/architecture/integration tests on Testcontainers, JaCoCo report, container image build), `docs-ci` (`infra/tools/check-docs.py`: links, decision references, AI-attribution scan) and Dependabot (Gradle, GitHub Actions, Docker). All third-party actions are pinned by commit SHA. The remaining pipelines below are created with their components.
 
 ## 1. Pipelines
 
@@ -8,7 +8,7 @@ Implemented in Phase 0: `backend-ci` (format check, compile with `-Xlint:all -We
 |---|---|---|---|
 | `backend-ci` | PR, push to main | `backend/**`, `docs/architecture/MODULAR_ARCHITECTURE.md` (module contract test) | format/lint → compile → unit → module/integration (Testcontainers) → architecture tests → OpenAPI generation + breaking-change diff → SCA/secret scan → coverage report |
 | `web-ci` (matrix: public-web, vendor-dashboard, admin-dashboard) | PR, push | `apps/<app>/**`, `packages/**` | install (frozen lockfile) → lint → typecheck → unit → build → Playwright (against built app + mocked/staging API) → axe → Lighthouse CI (public-web) |
-| `mobile-ci` | PR, push | `apps/customer-mobile/**` | `flutter analyze` → format check → unit/widget/golden → Android build (debug) → integration tests on emulator (main / nightly) |
+| `mobile-ci` | PR, push | `client/**` | `flutter analyze` → format check → unit/widget/golden → Android build (debug) → integration tests on emulator (main / nightly) |
 | `api-client-sync` | OpenAPI change | `backend/**` | Regenerate TS and Dart clients; fail if generated output not committed or changed unexpectedly |
 | `docs-ci` | PR | `docs/**`, `*.md` | Markdown lint, link check, required-doc-update check (see §3) |
 | `security-scheduled` | nightly | all | Dependency audit, container scan, ZAP baseline on staging, secret scan history |

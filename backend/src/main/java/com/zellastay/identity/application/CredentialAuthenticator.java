@@ -1,10 +1,6 @@
 package com.zellastay.identity.application;
 
-import com.zellastay.audit.api.AuditActor;
-import com.zellastay.audit.api.AuditEntry;
 import com.zellastay.audit.api.AuditOutcome;
-import com.zellastay.audit.api.AuditRecorder;
-import com.zellastay.audit.api.AuditSubject;
 import com.zellastay.identity.api.AccountKind;
 import com.zellastay.identity.api.AccountStatus;
 import com.zellastay.identity.api.AccountSuspendedException;
@@ -17,6 +13,7 @@ import com.zellastay.identity.domain.LockoutPolicy;
 import com.zellastay.identity.domain.PasswordHasher;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -45,7 +42,7 @@ class CredentialAuthenticator {
   private final AccountRepository accounts;
   private final PasswordHasher hasher;
   private final LockoutPolicy lockout;
-  private final AuditRecorder audit;
+  private final IdentityAuditTrail trail;
   private final TransactionTemplate transaction;
   private final Clock clock;
 
@@ -53,13 +50,13 @@ class CredentialAuthenticator {
       AccountRepository accounts,
       PasswordHasher hasher,
       LockoutPolicy lockout,
-      AuditRecorder audit,
+      IdentityAuditTrail trail,
       TransactionTemplate transaction,
       Clock clock) {
     this.accounts = accounts;
     this.hasher = hasher;
     this.lockout = lockout;
-    this.audit = audit;
+    this.trail = trail;
     this.transaction = transaction;
     this.clock = clock;
   }
@@ -70,7 +67,7 @@ class CredentialAuthenticator {
     Optional<Account> found = email.flatMap(value -> accounts.findByEmail(kind, value));
     if (found.isEmpty()) {
       hasher.burn(password);
-      failure(AuditActor.anonymous(), null, kind, email.isPresent() ? "unknown" : "invalid-email");
+      unknownAccountFailed(kind, email.isPresent() ? "unknown" : "invalid-email");
       throw new InvalidCredentialsException();
     }
     Account account = found.get();
@@ -79,15 +76,11 @@ class CredentialAuthenticator {
     return switch (outcome) {
       case OK -> accounts.findById(account.id()).orElseThrow();
       case SUSPENDED -> {
-        failure(AuditActors.actor(account), AuditActors.subject(account), kind, "suspended");
+        failed(account, kind, "suspended");
         throw new AccountSuspendedException();
       }
       default -> {
-        failure(
-            AuditActors.actor(account),
-            AuditActors.subject(account),
-            kind,
-            outcome.name().toLowerCase(java.util.Locale.ROOT).replace('_', '-'));
+        failed(account, kind, outcome.name().toLowerCase(Locale.ROOT).replace('_', '-'));
         if (outcome == Outcome.LOCKED_NOW) {
           lockoutAudit(account, kind);
         }
@@ -142,23 +135,22 @@ class CredentialAuthenticator {
     }
   }
 
-  private void failure(AuditActor actor, AuditSubject subject, AccountKind kind, String reason) {
-    audit.recordBestEffort(
-        new AuditEntry(
-            actor,
-            IdentityAuditAction.LOGIN_FAILURE,
-            subject == null ? new AuditSubject("account", null) : subject,
-            AuditOutcome.FAILURE,
-            Map.of("audience", kind.audience().value(), "reason", reason)));
+  private void unknownAccountFailed(AccountKind kind, String reason) {
+    trail.anonymousBestEffort(
+        IdentityAuditAction.LOGIN_FAILURE, AuditOutcome.FAILURE, failureDetails(kind, reason));
+  }
+
+  private void failed(Account account, AccountKind kind, String reason) {
+    trail.failedBestEffort(
+        account, IdentityAuditAction.LOGIN_FAILURE, failureDetails(kind, reason));
+  }
+
+  private static Map<String, Object> failureDetails(AccountKind kind, String reason) {
+    return Map.of("audience", kind.audience().value(), "reason", reason);
   }
 
   private void lockoutAudit(Account account, AccountKind kind) {
-    audit.recordBestEffort(
-        new AuditEntry(
-            AuditActors.actor(account),
-            IdentityAuditAction.LOGIN_LOCKOUT,
-            AuditActors.subject(account),
-            AuditOutcome.DENIED,
-            Map.of("audience", kind.audience().value())));
+    trail.deniedBestEffort(
+        account, IdentityAuditAction.LOGIN_LOCKOUT, Map.of("audience", kind.audience().value()));
   }
 }

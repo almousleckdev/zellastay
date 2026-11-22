@@ -1,8 +1,8 @@
 package com.zellastay.identity.application;
 
 import com.zellastay.identity.domain.AccessTokens;
-import com.zellastay.identity.domain.AccessTokens.IssuedToken;
 import com.zellastay.identity.domain.Account;
+import com.zellastay.identity.domain.IssuedToken;
 import com.zellastay.identity.domain.RefreshToken;
 import com.zellastay.identity.domain.RefreshTokenRepository;
 import com.zellastay.identity.domain.SecretGenerator;

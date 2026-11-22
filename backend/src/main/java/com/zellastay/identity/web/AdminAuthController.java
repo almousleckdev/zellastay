@@ -1,14 +1,10 @@
 package com.zellastay.identity.web;
 
 import com.zellastay.identity.application.AdminLoginService;
-import com.zellastay.identity.application.AdminMfaService;
+import com.zellastay.identity.application.AdminMfaEnrollmentService;
+import com.zellastay.identity.application.AdminMfaVerificationService;
 import com.zellastay.identity.application.MfaEnrollmentView;
 import com.zellastay.identity.application.MfaTicket;
-import com.zellastay.identity.web.AdminDtos.AdminTokenResponse;
-import com.zellastay.identity.web.AdminDtos.EnrollmentResponse;
-import com.zellastay.identity.web.AdminDtos.MfaTicketRequest;
-import com.zellastay.identity.web.AdminDtos.MfaTicketResponse;
-import com.zellastay.identity.web.AdminDtos.MfaVerifyRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,11 +15,16 @@ import org.springframework.web.bind.annotation.RestController;
 class AdminAuthController {
 
   private final AdminLoginService login;
-  private final AdminMfaService mfa;
+  private final AdminMfaEnrollmentService enrollment;
+  private final AdminMfaVerificationService verification;
 
-  AdminAuthController(AdminLoginService login, AdminMfaService mfa) {
+  AdminAuthController(
+      AdminLoginService login,
+      AdminMfaEnrollmentService enrollment,
+      AdminMfaVerificationService verification) {
     this.login = login;
-    this.mfa = mfa;
+    this.enrollment = enrollment;
+    this.verification = verification;
   }
 
   @PostMapping("/api/v1/admin/auth/login")
@@ -34,13 +35,13 @@ class AdminAuthController {
 
   @PostMapping("/api/v1/admin/auth/mfa/enroll")
   EnrollmentResponse enroll(@Valid @RequestBody MfaTicketRequest request) {
-    MfaEnrollmentView view = mfa.enroll(request.mfaTicket());
+    MfaEnrollmentView view = enrollment.enroll(request.mfaTicket());
     return new EnrollmentResponse(view.secret(), view.otpauthUri());
   }
 
   @PostMapping("/api/v1/admin/auth/mfa/verify")
   AdminTokenResponse verify(@Valid @RequestBody MfaVerifyRequest request) {
     return AdminTokenResponse.from(
-        mfa.verify(request.mfaTicket(), request.code(), request.recoveryCode()));
+        verification.verify(request.mfaTicket(), request.code(), request.recoveryCode()));
   }
 }

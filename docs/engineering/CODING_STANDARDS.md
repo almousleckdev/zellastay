@@ -6,7 +6,7 @@ Applies to all code. Language-specific sections follow universal rules. Where a 
 
 1. Clean Architecture and DDD: dependencies point inward; the domain knows nothing about HTTP, SQL, JSON or frameworks beyond what [ADR-4](../DECISIONS.md) permits.
 2. SOLID, applied pragmatically. **No unnecessary abstractions:** an interface needs a second implementation, a module boundary, or a test seam that matters. Do not create "manager", "helper", "util" grab-bags or single-implementation factories without need.
-3. **Single responsibility per file** and per class. Files stay focused and reasonably sized: target ≤ 300 lines per file, ≤ 40 lines per method/function; exceeding requires a justified split or exception noted in review.
+3. **Single responsibility per file** and per class. A source file never exceeds **280 lines** (ADR-43; physical lines including blanks and comments, enforced by `infra/tools/check-file-size.py`), and methods and functions stay at about 40 lines or fewer. There is no exception process: an oversized file is split by extracting classes, services, validators, models or utilities, never by compressing code. Enums used outside their declaring class, DTOs (separate from domain entities) and interfaces (separate from implementations) each live in their own files. The structure rules apply equally to tests, fixtures and tooling and are recorded in ADR-48: unrelated types are never nested to save files (nested types are private, one level deep, except `@ConfigurationProperties` trees), and a service takes at most 10 constructor parameters (enforced), with 7 or more treated as a review prompt.
 4. **No duplicated business logic.** A business rule has exactly one home (domain object or domain service in the owning module). Clients display; they do not re-implement rules (price, fee, refund, availability, permissions).
 5. Strong typing everywhere: typed IDs, value objects for money/dates/ranges, enums/sealed types for states, no stringly-typed states, no `Object`/`any`/`dynamic` escape hatches without justification.
 6. Secure defaults: deny by default, least privilege, validated input, safe error messages.
@@ -68,12 +68,12 @@ Feature-oriented structure, shared components and API client reuse, small single
 
 ## 4. Dart / Flutter
 
-Clean Architecture, native Cupertino-on-iOS / Material-on-Android UI behind `core/platform_ui`, strict DRY and small files are mandatory: [CUSTOMER_MOBILE.md](../frontend/CUSTOMER_MOBILE.md) §2–§3.
+Clean Architecture, native Cupertino-on-iOS / Material-on-Android UI behind `design_system`, strict DRY and small files are mandatory: [CUSTOMER_MOBILE.md](../frontend/CUSTOMER_MOBILE.md) §2–§3.
 
 - `analysis_options.yaml` with strict modes; `flutter analyze` clean; `dart format` enforced.
 - Riverpod for state and DI; providers are small and single-purpose; no global singletons; no business logic in widgets (widgets render state, call notifiers).
 - Immutable models (sealed classes/records/freezed); no `dynamic`; no `!` without justification.
-- Layered feature folders (`domain`, `data`, `di`, `presentation`) per [CUSTOMER_MOBILE.md](../frontend/CUSTOMER_MOBILE.md); no cross-feature imports except through `shared`/`core`; Material/Cupertino imports and platform branching only in `core/platform_ui`.
+- Layered feature folders (`domain`, `data`, `di`, `presentation`) per [CUSTOMER_MOBILE.md](../frontend/CUSTOMER_MOBILE.md); no cross-feature imports except through `shared`/`core`; Material/Cupertino imports and platform branching only in `design_system`.
 - All strings in ARB; all dimensions/colors from theme tokens.
 
 ## 5. SQL and scripts

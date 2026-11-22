@@ -28,7 +28,7 @@ public class ApiErrorController implements ErrorController {
         attribute instanceof Integer value && value >= 400 && value < 600
             ? HttpStatusCode.valueOf(value)
             : HttpStatus.INTERNAL_SERVER_ERROR;
-    ProblemDetail problem = problems.create(ApiExceptionHandler.codeFor(status), status, List.of());
+    ProblemDetail problem = problems.create(StatusErrorCodes.codeFor(status), status, List.of());
     return ResponseEntity.status(status)
         .contentType(MediaType.APPLICATION_PROBLEM_JSON)
         .body(problem);

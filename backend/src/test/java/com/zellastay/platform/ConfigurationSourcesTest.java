@@ -6,7 +6,7 @@ import static org.assertj.core.api.Assumptions.assumeThat;
 
 import com.zellastay.ZellaStayApplication;
 import com.zellastay.identity.infrastructure.IdentityProperties;
-import com.zellastay.support.TestInfrastructure;
+import com.zellastay.support.ApplicationTestEnvironment;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -36,7 +36,7 @@ class ConfigurationSourcesTest {
 
   @Test
   void secretsAreReadFromAMountedDirectory(@TempDir Path secrets) throws Exception {
-    Map<String, String> environment = TestInfrastructure.applicationEnvironment();
+    Map<String, String> environment = ApplicationTestEnvironment.variables();
     Files.writeString(secrets.resolve("ZS_DB_PASSWORD"), environment.get("ZS_DB_PASSWORD"));
     Files.writeString(secrets.resolve("ZS_REDIS_PASSWORD"), environment.get("ZS_REDIS_PASSWORD"));
     Files.writeString(
@@ -78,7 +78,7 @@ class ConfigurationSourcesTest {
 
   @Test
   void aMissingIdentitySecretFailsStartupNamingTheVariable(@TempDir Path secrets) {
-    Map<String, String> environment = TestInfrastructure.applicationEnvironment();
+    Map<String, String> environment = ApplicationTestEnvironment.variables();
 
     assertThatThrownBy(
             () ->

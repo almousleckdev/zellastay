@@ -1,8 +1,6 @@
 package com.zellastay.identity.application;
 
-import com.zellastay.audit.api.AuditEntry;
 import com.zellastay.audit.api.AuditOutcome;
-import com.zellastay.audit.api.AuditRecorder;
 import com.zellastay.identity.api.AccountId;
 import com.zellastay.identity.api.DeliveryRequest;
 import com.zellastay.identity.api.DeliveryTemplate;
@@ -32,7 +30,7 @@ public class RegisterAccountService {
   private final ChallengeIssuer challenges;
   private final QuietDelivery delivery;
   private final IdentityEvents events;
-  private final AuditRecorder audit;
+  private final IdentityAuditTrail trail;
   private final TransactionTemplate transaction;
   private final Clock clock;
 
@@ -43,7 +41,7 @@ public class RegisterAccountService {
       ChallengeIssuer challenges,
       QuietDelivery delivery,
       IdentityEvents events,
-      AuditRecorder audit,
+      IdentityAuditTrail trail,
       TransactionTemplate transaction,
       Clock clock) {
     this.accounts = accounts;
@@ -52,7 +50,7 @@ public class RegisterAccountService {
     this.challenges = challenges;
     this.delivery = delivery;
     this.events = events;
-    this.audit = audit;
+    this.trail = trail;
     this.transaction = transaction;
     this.clock = clock;
   }
@@ -90,13 +88,8 @@ public class RegisterAccountService {
             clock.instant());
     accounts.insert(account);
     String code = challenges.issueCode(account);
-    audit.record(
-        new AuditEntry(
-            AuditActors.actor(account),
-            IdentityAuditAction.ACCOUNT_REGISTERED,
-            AuditActors.subject(account),
-            AuditOutcome.SUCCESS,
-            Map.of("kind", command.kind().name())));
+    trail.succeeded(
+        account, IdentityAuditAction.ACCOUNT_REGISTERED, Map.of("kind", command.kind().name()));
     events.registered(account.id().value(), command.kind(), command.locale());
     events.verificationRequested(account.id().value(), "EMAIL_VERIFICATION");
     return Optional.of(code);
@@ -106,12 +99,9 @@ public class RegisterAccountService {
     delivery.send(
         new DeliveryRequest(
             DeliveryTemplate.ACCOUNT_ALREADY_EXISTS, email.value(), command.locale(), null));
-    audit.recordBestEffort(
-        new AuditEntry(
-            com.zellastay.audit.api.AuditActor.anonymous(),
-            IdentityAuditAction.REGISTRATION_DUPLICATE,
-            new com.zellastay.audit.api.AuditSubject("account", null),
-            AuditOutcome.DENIED,
-            Map.of("kind", command.kind().name())));
+    trail.anonymousBestEffort(
+        IdentityAuditAction.REGISTRATION_DUPLICATE,
+        AuditOutcome.DENIED,
+        Map.of("kind", command.kind().name()));
   }
 }

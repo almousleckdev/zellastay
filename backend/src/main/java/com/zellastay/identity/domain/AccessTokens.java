@@ -9,21 +9,6 @@ import java.util.UUID;
 /** Issues and verifies short-lived, audience-bound access tokens. */
 public interface AccessTokens {
 
-  record IssuedToken(String value, Instant expiresAt) {
-
-    @Override
-    public String toString() {
-      return "IssuedToken[expiresAt=" + expiresAt + "]";
-    }
-  }
-
-  record TokenClaims(
-      AccountId accountId,
-      TokenAudience audience,
-      UUID sessionId,
-      boolean mfaVerified,
-      Instant expiresAt) {}
-
   IssuedToken issue(
       AccountId accountId,
       TokenAudience audience,

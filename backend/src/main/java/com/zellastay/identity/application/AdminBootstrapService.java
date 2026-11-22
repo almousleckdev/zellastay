@@ -1,9 +1,5 @@
 package com.zellastay.identity.application;
 
-import com.zellastay.audit.api.AuditActor;
-import com.zellastay.audit.api.AuditEntry;
-import com.zellastay.audit.api.AuditOutcome;
-import com.zellastay.audit.api.AuditRecorder;
 import com.zellastay.identity.api.AccountId;
 import com.zellastay.identity.api.AccountKind;
 import com.zellastay.identity.api.AdminRole;
@@ -16,7 +12,6 @@ import com.zellastay.identity.domain.PasswordPolicy;
 import com.zellastay.identity.domain.Profile;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -24,16 +19,11 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Service
 public class AdminBootstrapService {
 
-  public enum Result {
-    CREATED,
-    SKIPPED_ADMIN_EXISTS
-  }
-
   private final AccountRepository accounts;
   private final AdminRoleRepository roles;
   private final PasswordHasher hasher;
   private final PasswordPolicy policy;
-  private final AuditRecorder audit;
+  private final IdentityAuditTrail trail;
   private final TransactionTemplate transaction;
   private final Clock clock;
 
@@ -42,21 +32,21 @@ public class AdminBootstrapService {
       AdminRoleRepository roles,
       PasswordHasher hasher,
       PasswordPolicy policy,
-      AuditRecorder audit,
+      IdentityAuditTrail trail,
       TransactionTemplate transaction,
       Clock clock) {
     this.accounts = accounts;
     this.roles = roles;
     this.hasher = hasher;
     this.policy = policy;
-    this.audit = audit;
+    this.trail = trail;
     this.transaction = transaction;
     this.clock = clock;
   }
 
-  public Result bootstrap(String rawEmail, String password) {
+  public AdminBootstrapResult bootstrap(String rawEmail, String password) {
     if (accounts.existsOfKind(AccountKind.ADMIN)) {
-      return Result.SKIPPED_ADMIN_EXISTS;
+      return AdminBootstrapResult.SKIPPED_ADMIN_EXISTS;
     }
     Email email = Email.of(rawEmail);
     policy.check(password, email);
@@ -64,9 +54,9 @@ public class AdminBootstrapService {
     return transaction.execute(status -> create(email, hash));
   }
 
-  private Result create(Email email, String hash) {
+  private AdminBootstrapResult create(Email email, String hash) {
     if (accounts.existsOfKind(AccountKind.ADMIN)) {
-      return Result.SKIPPED_ADMIN_EXISTS;
+      return AdminBootstrapResult.SKIPPED_ADMIN_EXISTS;
     }
     Instant now = clock.instant();
     Account account =
@@ -80,13 +70,7 @@ public class AdminBootstrapService {
             now);
     accounts.insert(account);
     roles.grant(account.id(), AdminRole.SUPER_ADMIN, now);
-    audit.record(
-        new AuditEntry(
-            AuditActor.system(),
-            IdentityAuditAction.ADMIN_BOOTSTRAP_EXECUTED,
-            AuditActors.subject(account),
-            AuditOutcome.SUCCESS,
-            Map.of()));
-    return Result.CREATED;
+    trail.systemAction(account, IdentityAuditAction.ADMIN_BOOTSTRAP_EXECUTED);
+    return AdminBootstrapResult.CREATED;
   }
 }

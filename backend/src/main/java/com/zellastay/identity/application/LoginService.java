@@ -1,8 +1,5 @@
 package com.zellastay.identity.application;
 
-import com.zellastay.audit.api.AuditEntry;
-import com.zellastay.audit.api.AuditOutcome;
-import com.zellastay.audit.api.AuditRecorder;
 import com.zellastay.identity.api.AccountKind;
 import com.zellastay.identity.domain.Account;
 import java.util.Map;
@@ -15,30 +12,25 @@ public class LoginService {
 
   private final CredentialAuthenticator authenticator;
   private final SessionIssuer sessions;
-  private final AuditRecorder audit;
+  private final IdentityAuditTrail trail;
   private final TransactionTemplate transaction;
 
   LoginService(
       CredentialAuthenticator authenticator,
       SessionIssuer sessions,
-      AuditRecorder audit,
+      IdentityAuditTrail trail,
       TransactionTemplate transaction) {
     this.authenticator = authenticator;
     this.sessions = sessions;
-    this.audit = audit;
+    this.trail = trail;
     this.transaction = transaction;
   }
 
   public TokenPair login(AccountKind kind, String email, String password) {
     Account account = authenticator.authenticate(kind, email, password);
     TokenPair pair = transaction.execute(status -> sessions.start(account, false));
-    audit.recordBestEffort(
-        new AuditEntry(
-            AuditActors.actor(account),
-            IdentityAuditAction.LOGIN_SUCCESS,
-            AuditActors.subject(account),
-            AuditOutcome.SUCCESS,
-            Map.of("audience", kind.audience().value())));
+    trail.succeededBestEffort(
+        account, IdentityAuditAction.LOGIN_SUCCESS, Map.of("audience", kind.audience().value()));
     return pair;
   }
 }

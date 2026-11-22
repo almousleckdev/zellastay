@@ -3,7 +3,6 @@ package com.zellastay.identity.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.zellastay.identity.api.AccountId;
-import com.zellastay.identity.domain.RefreshRotation.Decision;
 import com.zellastay.shared.security.TokenAudience;
 import java.time.Duration;
 import java.time.Instant;
@@ -35,7 +34,7 @@ class RefreshRotationTest {
     Session session = session();
 
     assertThat(RefreshRotation.decide(session, unused(session), T0.plusSeconds(60), GRACE))
-        .isEqualTo(Decision.ROTATE);
+        .isEqualTo(RotationDecision.ROTATE);
   }
 
   @Test
@@ -44,7 +43,7 @@ class RefreshRotationTest {
     RefreshToken token = used(session, T0.plusSeconds(100));
 
     assertThat(RefreshRotation.decide(session, token, T0.plusSeconds(105), GRACE))
-        .isEqualTo(Decision.RETRY_WITHIN_GRACE);
+        .isEqualTo(RotationDecision.RETRY_WITHIN_GRACE);
   }
 
   @Test
@@ -53,7 +52,7 @@ class RefreshRotationTest {
     RefreshToken token = used(session, T0.plusSeconds(100));
 
     assertThat(RefreshRotation.decide(session, token, T0.plusSeconds(111), GRACE))
-        .isEqualTo(Decision.REUSED);
+        .isEqualTo(RotationDecision.REUSED);
   }
 
   @Test
@@ -62,7 +61,7 @@ class RefreshRotationTest {
     RefreshToken token = new RefreshToken(UUID.randomUUID(), session.id(), "h", T0, T0, null);
 
     assertThat(RefreshRotation.decide(session, token, T0.plusSeconds(1), GRACE))
-        .isEqualTo(Decision.REUSED);
+        .isEqualTo(RotationDecision.REUSED);
   }
 
   @Test
@@ -71,7 +70,7 @@ class RefreshRotationTest {
     session.revoke("logout", T0.plusSeconds(1));
 
     assertThat(RefreshRotation.decide(session, unused(session), T0.plusSeconds(2), GRACE))
-        .isEqualTo(Decision.INVALID);
+        .isEqualTo(RotationDecision.INVALID);
   }
 
   @Test
@@ -81,10 +80,10 @@ class RefreshRotationTest {
     absolute.touch(T0.plus(Duration.ofDays(29)));
 
     assertThat(RefreshRotation.decide(idle, unused(idle), T0.plus(Duration.ofDays(15)), GRACE))
-        .isEqualTo(Decision.INVALID);
+        .isEqualTo(RotationDecision.INVALID);
     assertThat(
             RefreshRotation.decide(absolute, unused(absolute), T0.plus(Duration.ofDays(31)), GRACE))
-        .isEqualTo(Decision.INVALID);
+        .isEqualTo(RotationDecision.INVALID);
   }
 
   @Test
@@ -93,6 +92,6 @@ class RefreshRotationTest {
     RefreshToken foreign = unused(session());
 
     assertThat(RefreshRotation.decide(session, foreign, T0.plusSeconds(1), GRACE))
-        .isEqualTo(Decision.INVALID);
+        .isEqualTo(RotationDecision.INVALID);
   }
 }

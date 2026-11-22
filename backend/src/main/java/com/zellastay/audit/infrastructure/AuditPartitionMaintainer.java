@@ -26,14 +26,12 @@ public class AuditPartitionMaintainer {
     this.properties = properties;
   }
 
-  public record Report(int created, int stragglers) {}
-
   @Scheduled(cron = "${zellastay.audit.maintenance-cron}", zone = "UTC")
   void scheduled() {
     ensurePartitions();
   }
 
-  public Report ensurePartitions() {
+  public PartitionMaintenanceReport ensurePartitions() {
     LocalDate first = LocalDate.now(clock.withZone(ZoneOffset.UTC)).withDayOfMonth(1);
     int created = 0;
     for (int offset = 0; offset <= properties.partitionsAhead(); offset++) {
@@ -55,6 +53,6 @@ public class AuditPartitionMaintainer {
     if (stragglerCount > 0) {
       LOG.warn("{} audit events are in the default partition and need attention", stragglerCount);
     }
-    return new Report(created, stragglerCount);
+    return new PartitionMaintenanceReport(created, stragglerCount);
   }
 }

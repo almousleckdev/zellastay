@@ -1,10 +1,6 @@
 package com.zellastay.identity.application;
 
-import com.zellastay.audit.api.AuditEntry;
-import com.zellastay.audit.api.AuditOutcome;
-import com.zellastay.audit.api.AuditRecorder;
 import com.zellastay.identity.api.AccountKind;
-import com.zellastay.identity.api.AccountStatus;
 import com.zellastay.identity.api.DeliveryRequest;
 import com.zellastay.identity.api.DeliveryTemplate;
 import com.zellastay.identity.api.EmailInvalidException;
@@ -12,7 +8,6 @@ import com.zellastay.identity.api.ResendTooSoonException;
 import com.zellastay.identity.domain.Account;
 import com.zellastay.identity.domain.AccountRepository;
 import com.zellastay.identity.domain.Email;
-import java.util.Map;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -25,7 +20,7 @@ public class RequestPasswordResetService {
   private final ChallengeIssuer challenges;
   private final QuietDelivery delivery;
   private final IdentityEvents events;
-  private final AuditRecorder audit;
+  private final IdentityAuditTrail trail;
   private final TransactionTemplate transaction;
 
   RequestPasswordResetService(
@@ -33,13 +28,13 @@ public class RequestPasswordResetService {
       ChallengeIssuer challenges,
       QuietDelivery delivery,
       IdentityEvents events,
-      AuditRecorder audit,
+      IdentityAuditTrail trail,
       TransactionTemplate transaction) {
     this.accounts = accounts;
     this.challenges = challenges;
     this.delivery = delivery;
     this.events = events;
-    this.audit = audit;
+    this.trail = trail;
     this.transaction = transaction;
   }
 
@@ -56,31 +51,20 @@ public class RequestPasswordResetService {
 
   private Optional<DeliveryRequest> issue(AccountKind kind, Email email) {
     Optional<Account> found = accounts.findByEmail(kind, email);
-    if (found.isEmpty() || !canReset(found.get())) {
+    if (found.isEmpty() || !found.get().canResetPassword()) {
       return Optional.empty();
     }
     Account account = found.get();
     try {
       String token = challenges.issueResetToken(account);
       events.passwordResetRequested(account.id().value());
-      audit.record(
-          new AuditEntry(
-              AuditActors.actor(account),
-              IdentityAuditAction.PASSWORD_RESET_REQUESTED,
-              AuditActors.subject(account),
-              AuditOutcome.SUCCESS,
-              Map.of()));
+      trail.succeeded(account, IdentityAuditAction.PASSWORD_RESET_REQUESTED);
       return Optional.of(
           new DeliveryRequest(
               DeliveryTemplate.PASSWORD_RESET, email.value(), account.snapshot().locale(), token));
     } catch (ResendTooSoonException tooSoon) {
       return Optional.empty();
     }
-  }
-
-  static boolean canReset(Account account) {
-    return account.status() == AccountStatus.ACTIVE
-        || account.status() == AccountStatus.PENDING_VERIFICATION;
   }
 
   private static Optional<Email> parse(String raw) {

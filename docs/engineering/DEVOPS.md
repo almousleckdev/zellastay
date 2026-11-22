@@ -2,19 +2,17 @@
 
 ## 1. Principles
 
-12-factor configuration, immutable artifacts, infrastructure as code, least privilege, reproducible environments, cloud-provider portability. Cloud provider, region and hosting model are undecided `[OD-15]` (may be constrained by data residency `[LEGAL]` and latency to Gabon).
+12-factor configuration, immutable artifacts, infrastructure as code, least privilege, reproducible environments, cloud-provider portability. Railway is the initial deployment platform (ADR-47, [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md)). Region and data residency remain open `[OD-15]` (data residency `[LEGAL]`, latency to Gabon). Wherever this document says cloud secret manager, CDN or managed service, read the Railway equivalent in that document; on Railway secrets are sealed variables, not mounted files.
 
 ## 2. Repository layout (target)
 
 ```
 zellastay/
   backend/                    Spring Boot modular monolith (single deployable)
-  apps/
-    customer-mobile/          Flutter
-    public-web/               Next.js
-    vendor-dashboard/         Next.js
-    admin-dashboard/          Next.js
-  packages/                   Shared web packages (ui, api-client, design-tokens, config, i18n-utils)
+  client/                     Flutter (ADR-45)
+  web/                        website, vendor, admin: Next.js (ADR-44)
+  packages/                   Shared web packages (ui, design-tokens, icons, utilities, api-client, config)
+  contracts/openapi/          Committed OpenAPI contract (ADR-46)
   infra/                      IaC (Terraform or equivalent), Helm/Kustomize or compose manifests, runbooks
   docs/
   .github/workflows/

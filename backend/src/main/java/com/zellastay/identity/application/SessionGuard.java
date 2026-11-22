@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 
 /** Answers "may this session still be used?" for every authenticated request. */
 @Service
-public class SessionGuard {
+class SessionGuard {
 
   private final SessionStatusCache cache;
   private final SessionRepository sessions;
@@ -30,7 +30,7 @@ public class SessionGuard {
     this.clock = clock;
   }
 
-  public boolean isUsable(UUID sessionId) {
+  boolean isUsable(UUID sessionId) {
     Optional<Boolean> cached = cache.get(sessionId);
     if (cached.isPresent()) {
       return cached.get();

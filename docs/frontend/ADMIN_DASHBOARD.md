@@ -1,6 +1,6 @@
 # Platform Administration Dashboard (Next.js + TypeScript)
 
-Directory: `apps/admin-dashboard`. Audience: Zella Stay staff. Consumes `/api/v1/admin/**`. Hardened differently from other apps: separate deployment and domain, network restrictions (VPN/IP allow-list `[OD-15]`), mandatory second factor, short sessions, no public indexing, strict CSP, all actions audited.
+Directory: `web/admin`. Audience: Zella Stay staff. Consumes `/api/v1/admin/**`. Hardened differently from other apps: separate deployment and domain, network restrictions (VPN/IP allow-list `[OD-15]`), mandatory second factor, short sessions, no public indexing, strict CSP, all actions audited.
 
 ## 1. Admin roles
 

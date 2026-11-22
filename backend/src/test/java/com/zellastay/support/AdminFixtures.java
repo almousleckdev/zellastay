@@ -101,6 +101,10 @@ public class AdminFixtures {
   }
 
   /** Signs in through the real two-step flow and returns the tokens. */
+  public Auth.Tokens loginAsSuperAdmin(ApiClient api) {
+    return login(api, create(AdminRole.SUPER_ADMIN));
+  }
+
   public Auth.Tokens login(ApiClient api, Admin admin) {
     Response first =
         api.post("/api/v1/admin/auth/login", map("email", admin.email(), "password", PASSWORD));

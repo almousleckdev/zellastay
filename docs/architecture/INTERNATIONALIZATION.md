@@ -1,16 +1,20 @@
 # Internationalization and Localization
 
-Launch locales: **French (`fr`, default)** and **English (`en`)**. Launch country: **Gabon (`GA`)**, currency **XAF**. Everything country-, language- or currency-dependent is data and strategy, never hardcoded.
+Launch locales: **French (`fr`, default)** and **English (`en`)**. First commercial market: **Gabon (`GA`)**; Mali, Côte d'Ivoire and Senegal are prepared architecturally and further countries follow (ADR-38). Everything country-, language- or currency-dependent is data and strategy, never hardcoded. The full model, governing-country matrix and market lifecycle are in [MULTI_COUNTRY.md](MULTI_COUNTRY.md).
 
 ## 1. Concepts (kept distinct)
 
 | Concept | Meaning | Where it lives |
 |---|---|---|
 | Locale | Language + formatting (`fr`, `en`; later `fr-GA`, `pt`, `ar`…) | `cfg_locale`, user profile, request `Accept-Language` |
-| Country | Market/regulatory jurisdiction | `cfg_country`; property and organization have one |
-| Currency | ISO 4217 code with exponent | `cfg_currency` (XAF exponent 0, EUR 2, …) |
-| Time zone | IANA zone (`Africa/Libreville`) | property, user; stored on property |
-| Display vs transaction currency | Transactions occur in the property's pricing currency. Display conversion is **out of scope for launch** `[OD-16]` | |
+| Country | ISO country, immutable facts | `cfg_country` |
+| Market | A country's commercial activation record and lifecycle | `cfg_market` |
+| Jurisdiction | The legal regime governing a topic (national or supranational) | `cfg_jurisdiction`, `cfg_country_jurisdiction` |
+| Currency | ISO 4217 code with exponent; `XAF` and `XOF` are different currencies, never interchangeable | `cfg_currency` (exponent 0 for both, 2 for EUR) |
+| Time zone | IANA zone (`Africa/Libreville`); countries do not share one offset | property; allowed zones in `cfg_country_time_zone` |
+| Customer location | Where the customer is; never decides property rules | profile, booking snapshot (`customer_country`, nullable) |
+| Property location | The property's country; governs taxes, currency, cancellation and regulations (ADR-37) | `cat_property.country`, booking snapshot (`property_country`) |
+| Display vs transaction currency | Transactions occur in the property's pricing currency with no automatic conversion. Display conversion is **out of scope** `[OD-16]` | |
 
 ## 2. Backend
 
@@ -24,7 +28,9 @@ Launch locales: **French (`fr`, default)** and **English (`en`)**. Launch countr
 
 ## 3. Country configuration (per country)
 
-Currency set, locales, time zones, tax rules (rate, base, inclusive/exclusive display), required vendor documents, address format and required address fields, phone number rules (E.164 validation by region), payment methods/providers, SMS sender rules, legal texts (terms, privacy) with versions, service-fee rules, cancellation-policy templates allowed, public holidays/seasons (optional aid for pricing), and feature flags. Adding a country = new config rows + adapters if provider differs + legal review + translations.
+Currency set, locales, time zones, tax rules (rate, base, inclusive/exclusive display), required vendor documents, address format and required address fields, phone number rules (E.164 validation by region), payment methods/providers, SMS sender rules, legal texts (terms, privacy) with versions, service-fee and commission rules, cancellation-policy templates allowed, public holidays/seasons (optional aid for pricing), and feature flags. Adding a country = new config rows + adapters if provider differs + legal review + translations.
+
+**Ownership (ADR-36):** the registries (country, market, currency, locale, time zone, jurisdiction), global parameters and feature flags live in `platformconfig`. Tax, service-fee and commission rules live in `pricing`; payment methods and routing in `payment`; document requirements in `onboarding`; cancellation templates in `booking`. See [MULTI_COUNTRY.md](MULTI_COUNTRY.md) §3.
 
 Tax display: prices shown to customers include or exclude taxes per country rule; the breakdown is always available. Rules `[LEGAL]`.
 
@@ -60,8 +66,9 @@ Tax display: prices shown to customers include or exclude taxes per country rule
 
 ## 8. Adding a country (checklist)
 
-1. Legal/tax/payment review `[LEGAL]` (blocking).
-2. `cfg_country` and dependent config rows; document requirements; tax rules; service-fee rules; cancellation templates.
+1. Legal/tax/payment review `[LEGAL]` (blocking), including L-1 closed for that country.
+2. `cfg_country`, `cfg_market` and dependent registry rows in `platformconfig`; then each owning module's rows: document requirements (`onboarding`), tax, service-fee and commission rules (`pricing`), payment methods (`payment`), cancellation templates (`booking`), subscription tax (`subscription`).
+2a. Market readiness: every module's `MarketReadinessCheck` passes and a second approver activates the market (ADR-38). Activation is data, not a deployment.
 3. Payment adapters (or reuse) and sandbox certification; SMS/email sender registration.
 4. Seed attractions/amenities localization; address and geocoding validation.
 5. Support operations and admin reviewer staffing for verification.

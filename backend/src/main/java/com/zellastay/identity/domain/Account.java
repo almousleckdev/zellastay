@@ -129,6 +129,11 @@ public final class Account {
     return lockedUntil != null && now.isBefore(lockedUntil);
   }
 
+  /** Accounts that are waiting for verification or active may reset their password. */
+  public boolean canResetPassword() {
+    return status == AccountStatus.ACTIVE || status == AccountStatus.PENDING_VERIFICATION;
+  }
+
   public boolean canAuthenticate(Instant now) {
     return status == AccountStatus.ACTIVE && !isLocked(now);
   }

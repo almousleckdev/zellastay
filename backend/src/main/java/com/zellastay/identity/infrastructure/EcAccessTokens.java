@@ -9,6 +9,8 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.zellastay.identity.api.AccountId;
 import com.zellastay.identity.domain.AccessTokens;
+import com.zellastay.identity.domain.IssuedToken;
+import com.zellastay.identity.domain.TokenClaims;
 import com.zellastay.shared.security.TokenAudience;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;

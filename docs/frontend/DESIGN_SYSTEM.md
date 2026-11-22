@@ -1,6 +1,6 @@
 # Design System
 
-One design language across four apps, implemented twice: **web** (`packages/ui`, React + design tokens) and **mobile** (Flutter, with native Cupertino implementations on iOS and native Material implementations on Android behind `core/platform_ui`), both generated from a single source of **design tokens**. Brand identity (name treatment, logo, final palette, typography choices) is a business/design input `[OD-26]`; this document defines structure and rules, and the values below are placeholders until brand approval.
+One design language across four apps, implemented twice: **web** (`packages/ui`, React + design tokens) and **mobile** (Flutter, with native Cupertino implementations on iOS and native Material implementations on Android behind `design_system`), both generated from a single source of **design tokens**. Brand identity (name treatment, logo, final palette, typography choices) is a business/design input `[OD-26]`; this document defines structure and rules, and the values below are placeholders until brand approval.
 
 ## 1. Principles
 
@@ -24,6 +24,17 @@ Format: Style-Dictionary-compatible JSON compiled to CSS variables (web, Tailwin
 | Motion | Durations and easings; reduced-motion variants |
 | Breakpoints | `sm 640`, `md 768`, `lg 1024`, `xl 1280`, `2xl 1536` |
 | Z-index | Named layers |
+
+## 2a. Approved palette and contrast rules (ADR-44)
+
+Shared by web and Flutter, defined once in `packages/design-tokens`. **Approved:** primary Orange-500 `#F97316`; background white `#FFFFFF`; primary text Neutral-900; secondary text Neutral-600; borders Neutral-200; neutral gray surfaces only where necessary; light theme first. No random colors, no unnecessary gradients, no excessive shadows, no oversized controls, one icon set.
+
+**Proposed (contrast, computed by hand; the CI contrast test is authoritative):**
+- White on Orange-500 is about 2.8:1 and fails WCAG 2.2 AA for text and for UI components. Neutral-900 on Orange-500 is about 6.4:1 and passes. Primary buttons therefore use a Neutral-900 label on an Orange-500 fill.
+- Orange text, links and focus rings on white also fail, so the system defines a darker brand token (around orange-700, about 5:1 on white) for those uses. Orange-500 remains the brand fill.
+- Neutral-200 borders (about 1.3:1) are decorative only (cards, dividers). Form-control borders use a stronger neutral token so the control boundary is perceivable (3:1 minimum).
+- Semantic colors for success, warning, danger and info (booking and form states) come from one minimal approved set, each pair tested; they are not chosen ad hoc in components.
+- Dark mode is out of scope until after launch; the scaffold's dark-mode media query is removed.
 
 ## 3. Component inventory
 
@@ -55,7 +66,7 @@ Single icon set (open license, outline style) shared via token names; amenity ic
 
 ## 7. Required state and error components
 
-Both platforms provide the same behavior contract: `ErrorState`/`ErrorView`, `EmptyState`, loading skeletons, inline field errors and a transient notice (toast/snackbar equivalent). Web versions live in `packages/ui`; mobile versions are implemented per platform in `core/platform_ui`. They render the localized server `detail` and never raw exceptions ([ERROR_HANDLING.md](../engineering/ERROR_HANDLING.md)). Media uses named variants only ([MEDIA_ARCHITECTURE.md](../architecture/MEDIA_ARCHITECTURE.md) §5).
+Both platforms provide the same behavior contract: `ErrorState`/`ErrorView`, `EmptyState`, loading skeletons, inline field errors and a transient notice (toast/snackbar equivalent). Web versions live in `packages/ui`; mobile versions are implemented per platform in `design_system`. They render the localized server `detail` and never raw exceptions ([ERROR_HANDLING.md](../engineering/ERROR_HANDLING.md)). Media uses named variants only ([MEDIA_ARCHITECTURE.md](../architecture/MEDIA_ARCHITECTURE.md) §5).
 
 ## 8. Governance
 

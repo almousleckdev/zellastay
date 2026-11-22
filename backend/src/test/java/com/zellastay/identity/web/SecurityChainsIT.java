@@ -9,25 +9,15 @@ import com.zellastay.support.ApiClient;
 import com.zellastay.support.ApiClient.Response;
 import com.zellastay.support.Auth;
 import com.zellastay.support.IntegrationTest;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 
 @IntegrationTest
 class SecurityChainsIT {
 
-  @Value("${local.server.port}")
-  int port;
-
   @Autowired AccountFixtures fixtures;
 
   ApiClient api;
-
-  @BeforeEach
-  void client() {
-    api = new ApiClient(port);
-  }
 
   private Auth.Tokens customer() {
     String email = AccountFixtures.uniqueEmail();

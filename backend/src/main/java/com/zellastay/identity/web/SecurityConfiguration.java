@@ -1,10 +1,8 @@
 package com.zellastay.identity.web;
 
-import com.zellastay.identity.application.SessionGuard;
-import com.zellastay.identity.domain.AccessTokens;
+import com.zellastay.identity.application.BearerTokenAuthenticator;
 import com.zellastay.shared.security.AudienceRoutes;
 import com.zellastay.shared.security.TokenAudience;
-import java.time.Clock;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.security.autoconfigure.actuate.web.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
@@ -119,8 +117,7 @@ class SecurityConfiguration {
   private HttpSecurity withBearer(HttpSecurity http, TokenAudience audience, Dependencies d)
       throws Exception {
     http.addFilterBefore(
-            new BearerAuthenticationFilter(
-                audience, d.tokens(), d.sessions(), d.authorities(), d.clock()),
+            new BearerAuthenticationFilter(audience, d.authenticator(), d.authorities()),
             AnonymousAuthenticationFilter.class)
         .exceptionHandling(
             handling ->
@@ -141,18 +138,14 @@ class SecurityConfiguration {
 
   @Bean
   Dependencies securityDependencies(
-      AccessTokens tokens,
-      SessionGuard sessions,
+      BearerTokenAuthenticator authenticator,
       PrincipalAuthorities authorities,
-      ProblemSecurityHandlers handlers,
-      Clock clock) {
-    return new Dependencies(tokens, sessions, authorities, handlers, clock);
+      ProblemSecurityHandlers handlers) {
+    return new Dependencies(authenticator, authorities, handlers);
   }
 
   record Dependencies(
-      AccessTokens tokens,
-      SessionGuard sessions,
+      BearerTokenAuthenticator authenticator,
       PrincipalAuthorities authorities,
-      ProblemSecurityHandlers handlers,
-      Clock clock) {}
+      ProblemSecurityHandlers handlers) {}
 }

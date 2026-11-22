@@ -7,50 +7,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.util.Locale;
+import errorfixtures.SecurityFailureController;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.context.support.ResourceBundleMessageSource;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
 
 /** Method-security failures raised inside controllers must use the standard problem contract. */
 class SecurityExceptionHandlingTest {
-
-  @RestController
-  static class ProbeController {
-    @GetMapping("/probe/denied")
-    String denied() {
-      throw new AccessDeniedException("internal detail");
-    }
-
-    @GetMapping("/probe/unauthenticated")
-    String unauthenticated() {
-      throw new BadCredentialsException("internal detail");
-    }
-  }
 
   private MockMvc mvc;
 
   @BeforeEach
   void setUp() {
-    ResourceBundleMessageSource messages = new ResourceBundleMessageSource();
-    messages.setBasename("messages/errors");
-    messages.setDefaultEncoding("UTF-8");
-    messages.setFallbackToSystemLocale(false);
-    AcceptHeaderLocaleResolver locales = new AcceptHeaderLocaleResolver();
-    locales.setDefaultLocale(Locale.FRENCH);
-    mvc =
-        MockMvcBuilders.standaloneSetup(new ProbeController())
-            .setControllerAdvice(new ApiExceptionHandler(new ProblemFactory(messages)))
-            .addFilters(new RequestIdFilter())
-            .setLocaleResolver(locales)
-            .build();
+    mvc = ErrorContractMockMvc.around(new SecurityFailureController());
   }
 
   @Test

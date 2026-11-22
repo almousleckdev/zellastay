@@ -5,6 +5,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noMethods;
 import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
 
+import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.library.GeneralCodingRules;
 import java.time.Instant;
@@ -65,6 +66,16 @@ final class ArchitectureRules {
             .should()
             .dependOnClassesThat()
             .resideInAPackage(web)
+            .allowEmptyShould(true));
+
+    rules.put(
+        "web uses application services, never domain ports",
+        noClasses()
+            .that()
+            .resideInAPackage(web)
+            .should()
+            .dependOnClassesThat(
+                JavaClass.Predicates.resideInAPackage(domain).and(JavaClass.Predicates.INTERFACES))
             .allowEmptyShould(true));
 
     rules.put(
@@ -144,6 +155,7 @@ final class ArchitectureRules {
         "no generic exceptions thrown",
         GeneralCodingRules.NO_CLASSES_SHOULD_THROW_GENERIC_EXCEPTIONS);
 
+    rules.putAll(StructureRules.forBasePackage(base));
     rules.putAll(ErrorHandlingRules.forBasePackage(base));
     rules.put(
         "media provider SDK is confined to media infrastructure",
@@ -154,5 +166,9 @@ final class ArchitectureRules {
 
   static ArchRule modulesAreFreeOfCycles(String base) {
     return slices().matching(base + ".(*)..").should().beFreeOfCycles().allowEmptyShould(true);
+  }
+
+  static ArchRule packagesAreFreeOfCyclesWithinModules(String base) {
+    return slices().matching(base + ".(*).(*)..").should().beFreeOfCycles().allowEmptyShould(true);
   }
 }

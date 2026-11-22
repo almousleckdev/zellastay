@@ -1,5 +1,6 @@
 package com.zellastay.identity.infrastructure;
 
+import com.zellastay.identity.application.AdminBootstrapResult;
 import com.zellastay.identity.application.AdminBootstrapService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,8 +28,7 @@ class AdminBootstrapRunner implements ApplicationRunner {
     if (!settings.enabled()) {
       return;
     }
-    AdminBootstrapService.Result result =
-        bootstrap.bootstrap(settings.email(), settings.password());
+    AdminBootstrapResult result = bootstrap.bootstrap(settings.email(), settings.password());
     LOG.info("admin bootstrap finished: {}", result);
   }
 }

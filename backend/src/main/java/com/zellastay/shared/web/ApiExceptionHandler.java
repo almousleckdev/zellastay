@@ -5,15 +5,10 @@ import com.zellastay.shared.ErrorCategory;
 import com.zellastay.shared.ErrorCode;
 import com.zellastay.shared.ZellaStayException;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.core.NestedExceptionUtils;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -26,7 +21,6 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -38,12 +32,13 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
   private static final Logger LOG = LoggerFactory.getLogger(ApiExceptionHandler.class);
-  private static final Pattern CAMEL_BOUNDARY = Pattern.compile("([a-z0-9])([A-Z])");
 
   private final ProblemFactory problems;
+  private final ValidationProblems validation;
 
-  ApiExceptionHandler(ProblemFactory problems) {
+  ApiExceptionHandler(ProblemFactory problems, ValidationProblems validation) {
     this.problems = problems;
+    this.validation = validation;
   }
 
   @ExceptionHandler(ZellaStayException.class)
@@ -107,17 +102,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
       HttpHeaders headers,
       HttpStatusCode status,
       WebRequest request) {
-    List<Map<String, String>> errors = new ArrayList<>();
-    Locale locale = LocaleContextHolder.getLocale();
-    for (FieldError error : ex.getBindingResult().getFieldErrors()) {
-      String constraint = kebab(error.getCode() == null ? "invalid" : error.getCode());
-      errors.add(
-          Map.of(
-              "field", error.getField(),
-              "code", "validation." + constraint,
-              "message", problems.fieldMessage(constraint, locale)));
-    }
-    return validationResponse(errors);
+    return respond(validation.forBody(ex));
   }
 
   @Override
@@ -126,25 +111,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
       HttpHeaders headers,
       HttpStatusCode status,
       WebRequest request) {
-    List<Map<String, String>> errors = new ArrayList<>();
-    Locale locale = LocaleContextHolder.getLocale();
-    ex.getParameterValidationResults()
-        .forEach(
-            result -> {
-              String name =
-                  result.getMethodParameter().getParameterName() == null
-                      ? "parameter"
-                      : result.getMethodParameter().getParameterName();
-              errors.add(
-                  Map.of(
-                      "field",
-                      name,
-                      "code",
-                      "validation.invalid",
-                      "message",
-                      problems.fieldMessage("invalid", locale)));
-            });
-    return validationResponse(errors);
+    return respond(validation.forParameters(ex));
   }
 
   @Override
@@ -154,7 +121,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
       HttpHeaders headers,
       HttpStatusCode statusCode,
       WebRequest request) {
-    CommonErrorCode code = codeFor(statusCode);
+    CommonErrorCode code = StatusErrorCodes.codeFor(statusCode);
     if (statusCode.is5xxServerError()) {
       LOG.error("Request failed status={}", statusCode.value(), ex);
     } else {
@@ -168,29 +135,6 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         .body(problem);
   }
 
-  static CommonErrorCode codeFor(HttpStatusCode status) {
-    return switch (status.value()) {
-      case 404 -> CommonErrorCode.RESOURCE_NOT_FOUND;
-      case 405 -> CommonErrorCode.REQUEST_METHOD_NOT_ALLOWED;
-      case 406 -> CommonErrorCode.REQUEST_NOT_ACCEPTABLE;
-      case 412 -> CommonErrorCode.PRECONDITION_FAILED;
-      case 413 -> CommonErrorCode.REQUEST_TOO_LARGE;
-      case 415 -> CommonErrorCode.REQUEST_UNSUPPORTED_MEDIA_TYPE;
-      case 429 -> CommonErrorCode.RATE_LIMITED;
-      case 503 -> CommonErrorCode.SERVICE_BUSY;
-      default ->
-          status.is5xxServerError()
-              ? CommonErrorCode.INTERNAL_ERROR
-              : CommonErrorCode.REQUEST_MALFORMED;
-    };
-  }
-
-  private ResponseEntity<Object> validationResponse(List<Map<String, String>> errors) {
-    ProblemDetail problem = problems.create(CommonErrorCode.VALIDATION_FAILED, List.of());
-    problem.setProperty("errors", errors);
-    return respond(problem);
-  }
-
   private static ResponseEntity<Object> respond(ProblemDetail problem) {
     return ResponseEntity.status(problem.getStatus()).contentType(problemJson()).body(problem);
   }
@@ -201,10 +145,6 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
   private static boolean isServerSide(ErrorCategory category) {
     return category == ErrorCategory.INTERNAL || category == ErrorCategory.UNAVAILABLE;
-  }
-
-  private static String kebab(String constraint) {
-    return CAMEL_BOUNDARY.matcher(constraint).replaceAll("$1-$2").toLowerCase(Locale.ROOT);
   }
 
   private static String describe(DataAccessException ex) {

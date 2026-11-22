@@ -59,7 +59,7 @@ class AdminBootstrapServiceTest {
           roles,
           hasher,
           new PasswordPolicy(Set.of("password123")),
-          audit,
+          new IdentityAuditTrail(audit),
           transaction,
           Clock.fixed(Instant.parse("2026-11-02T10:00:00Z"), ZoneOffset.UTC));
 
@@ -68,10 +68,9 @@ class AdminBootstrapServiceTest {
     when(accounts.existsOfKind(AccountKind.ADMIN)).thenReturn(false);
     when(hasher.hash("Str0ng-Bootstrap-pass")).thenReturn("hashed");
 
-    AdminBootstrapService.Result result =
-        service.bootstrap("First@Example.com", "Str0ng-Bootstrap-pass");
+    AdminBootstrapResult result = service.bootstrap("First@Example.com", "Str0ng-Bootstrap-pass");
 
-    assertThat(result).isEqualTo(AdminBootstrapService.Result.CREATED);
+    assertThat(result).isEqualTo(AdminBootstrapResult.CREATED);
     ArgumentCaptor<Account> account = ArgumentCaptor.forClass(Account.class);
     verify(accounts).insert(account.capture());
     assertThat(account.getValue().snapshot().email().value()).isEqualTo("first@example.com");
@@ -89,10 +88,9 @@ class AdminBootstrapServiceTest {
   void doesNothingOnceAnyAdministratorExists() {
     when(accounts.existsOfKind(AccountKind.ADMIN)).thenReturn(true);
 
-    AdminBootstrapService.Result result =
-        service.bootstrap("first@example.com", "Str0ng-Bootstrap-pass");
+    AdminBootstrapResult result = service.bootstrap("first@example.com", "Str0ng-Bootstrap-pass");
 
-    assertThat(result).isEqualTo(AdminBootstrapService.Result.SKIPPED_ADMIN_EXISTS);
+    assertThat(result).isEqualTo(AdminBootstrapResult.SKIPPED_ADMIN_EXISTS);
     verify(accounts, never()).insert(any());
     verify(roles, never()).grant(any(), any(), any());
     verify(audit, never()).record(any());

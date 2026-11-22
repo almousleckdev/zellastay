@@ -163,4 +163,21 @@ class AccountTest {
 
     assertThat(Account.restore(account.snapshot()).snapshot()).isEqualTo(account.snapshot());
   }
+
+  @Test
+  void aPendingOrActiveAccountMayResetItsPassword() {
+    assertThat(pending().canResetPassword()).isTrue();
+    assertThat(active().canResetPassword()).isTrue();
+  }
+
+  @Test
+  void aSuspendedOrDeactivatedAccountMayNotResetItsPassword() {
+    Account suspended = active();
+    suspended.suspend();
+    Account deactivated = active();
+    deactivated.deactivate();
+
+    assertThat(suspended.canResetPassword()).isFalse();
+    assertThat(deactivated.canResetPassword()).isFalse();
+  }
 }

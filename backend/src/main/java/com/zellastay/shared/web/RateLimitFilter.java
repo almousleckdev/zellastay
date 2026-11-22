@@ -49,7 +49,7 @@ class RateLimitFilter extends OncePerRequestFilter implements Ordered {
     boolean auth = isAuthEndpoint(request.getRequestURI());
     RateLimitProperties.Policy policy = auth ? properties.auth() : properties.api();
     String key = (auth ? "auth:" : "api:") + request.getRemoteAddr();
-    RateLimitCounter.Hit hit = counter.hit(key, policy.window());
+    RateLimitHit hit = counter.hit(key, policy.window());
     if (hit.count() > policy.requests()) {
       long retryAfter = Math.max(1, hit.remaining().toSeconds());
       writer.write(

@@ -3,8 +3,8 @@ package com.zellastay.identity.infrastructure;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.zellastay.identity.api.AccountId;
-import com.zellastay.identity.domain.AccessTokens.IssuedToken;
-import com.zellastay.identity.domain.AccessTokens.TokenClaims;
+import com.zellastay.identity.domain.IssuedToken;
+import com.zellastay.identity.domain.TokenClaims;
 import com.zellastay.shared.security.TokenAudience;
 import com.zellastay.support.TestKeys;
 import java.nio.charset.StandardCharsets;

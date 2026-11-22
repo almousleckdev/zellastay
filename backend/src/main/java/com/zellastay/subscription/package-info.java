@@ -3,6 +3,7 @@
     allowedDependencies = {
       "shared",
       "platformconfig::api",
+      "identity::api",
       "payment::api",
       "onboarding::api",
       "audit::api"

@@ -18,7 +18,7 @@ class ResilientRateLimitCounter implements RateLimitCounter {
   }
 
   @Override
-  public Hit hit(String key, Duration window) {
+  public RateLimitHit hit(String key, Duration window) {
     try {
       return primary.hit(key, window);
     } catch (RuntimeException e) {

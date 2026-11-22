@@ -1,8 +1,8 @@
 # Zella Stay
 
-A global accommodation booking marketplace — hotels, resorts, apartments, villas, guesthouses, hostels, bed and breakfasts and private homes — launching in **Gabon** with an architecture ready for international expansion.
+A global accommodation booking marketplace — hotels, resorts, apartments, villas, guesthouses, hostels, bed and breakfasts and private homes — launching in **Gabon** with an architecture ready for Mali, Côte d'Ivoire, Senegal and further countries.
 
-**Status:** documentation foundation approved with decisions recorded; **Phase 0 backend foundation implemented** (module skeleton, architecture tests, PostgreSQL/Redis dev stack, Docker, CI). No business features, payments, or frontends exist yet. See [docs/product/ROADMAP.md](docs/product/ROADMAP.md).
+**Status (2026-11-22):** documentation foundation approved; **Phase 0 backend foundation and Phase 1 Slice A (identity and audit) are implemented** in `backend/` (Slice A awaits review on branch `identity-audit-slice`). The three Next.js apps and the Flutter app exist only as unmodified scaffolds; booking, payments, subscriptions and every other module are not started. Gabon is the first launch market; Mali, Côte d'Ivoire and Senegal are prepared architecturally. Work order: [docs/engineering/DEVELOPMENT_PROCESS.md](docs/engineering/DEVELOPMENT_PROCESS.md); roadmap: [docs/product/ROADMAP.md](docs/product/ROADMAP.md).
 
 ## What it is
 
@@ -58,7 +58,7 @@ infra/scripts/     Local run script and documentation checks
 .github/           CI workflows (backend-ci, docs-ci) and Dependabot
 ```
 
-Planned (created when each component is scaffolded): `apps/customer-mobile` (Flutter), `apps/public-web`, `apps/vendor-dashboard`, `apps/admin-dashboard` (Next.js), `packages/` (shared web packages).
+Frontend scaffolds present but unmodified: `client/` (Flutter), `web/website`, `web/vendor`, `web/admin` (Next.js). Planned: `packages/` (shared web packages: ui, design-tokens, icons, utilities, api-client, config) and `contracts/openapi/` (committed API contract).
 
 ## Engineering principles
 

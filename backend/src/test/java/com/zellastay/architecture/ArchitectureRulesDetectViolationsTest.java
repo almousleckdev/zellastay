@@ -38,6 +38,15 @@ class ArchitectureRulesDetectViolationsTest {
   }
 
   @Test
+  void packageCycleRuleFlagsCyclesInsideAModule() {
+    assertThatThrownBy(
+            () ->
+                ArchitectureRules.packagesAreFreeOfCyclesWithinModules(VIOLATING)
+                    .check(VIOLATING_CLASSES))
+        .isInstanceOf(AssertionError.class);
+  }
+
+  @Test
   void cleanFixturePassesEveryRule() {
     ArchitectureRules.forBasePackage(CLEAN, SDK)
         .forEach(
@@ -46,6 +55,10 @@ class ArchitectureRulesDetectViolationsTest {
                     .as("clean code must satisfy rule: %s", name)
                     .doesNotThrowAnyException());
     assertThatCode(() -> ArchitectureRules.modulesAreFreeOfCycles(CLEAN).check(CLEAN_CLASSES))
+        .doesNotThrowAnyException();
+    assertThatCode(
+            () ->
+                ArchitectureRules.packagesAreFreeOfCyclesWithinModules(CLEAN).check(CLEAN_CLASSES))
         .doesNotThrowAnyException();
   }
 }

@@ -26,25 +26,31 @@ Tables never have foreign keys into another module's tables. Cross-module links 
 Key columns only. `+std` = standard columns (id, created_at, updated_at, version where noted).
 
 ### cfg (platformconfig)
-- `cfg_country(code PK char(2), default_currency, default_locale, default_time_zone, status, ...)`
-- `cfg_currency(code PK, exponent smallint, symbol)`; `cfg_locale(code PK, enabled, is_default)`
-- `cfg_country_locale`, `cfg_country_currency`, `cfg_country_payment_method(country, method, provider_key, enabled, config_ref)`
-- `cfg_tax_rule(id, country, scope, rate_bp, applies_to, valid_from, valid_to, version)` — rate in basis points
-- `cfg_document_requirement(country, subject_type, applicant_type, document_type, mandatory)`
-- `cfg_cancellation_policy(code, country?, version, status)` + `cfg_cancellation_policy_tier(policy_code, version, hours_before_check_in, refund_percent_accommodation, refund_cleaning_fee, refund_service_fee, refund_taxes)` — platform-defined templates `[OD-3]`; `cat_property.cancellation_policy_code` selects one; bookings snapshot the resolved tiers
-- `cfg_service_fee_rule(id, country, currency, kind, percent_bp, fixed_minor, min_minor, max_minor, valid_from, valid_to, version)`
+`platformconfig` owns registries and configuration infrastructure only (ADR-36). Rule tables moved to the modules that interpret them; see [MULTI_COUNTRY.md](MULTI_COUNTRY.md) §3.
+- `cfg_country(code PK char(2), default_currency, default_locale, default_time_zone, ...)` — immutable ISO facts
+- `cfg_market(country PK, status {DRAFT, CONFIGURING, READY_FOR_REVIEW, ACTIVE, SUSPENDED, RETIRED}, activated_at, activated_by, approved_by, version)` — commercial activation; legal clearance records reference it
+- `cfg_currency(code PK, exponent smallint, symbol)` (`XAF` and `XOF` are separate rows); `cfg_locale(code PK, enabled, is_default)`
+- `cfg_country_locale`, `cfg_country_currency`, `cfg_country_time_zone`
+- `cfg_jurisdiction(code PK, kind {NATIONAL, SUPRANATIONAL}, name)`, `cfg_country_jurisdiction(country, jurisdiction, topic, valid_from, valid_to)` — minimal; no behavior depends on it yet
 - `cfg_parameter(key, scope, value jsonb, version)` — timers, thresholds; `cfg_feature_flag`
-- Every config table is versioned or has validity ranges; bookings snapshot what they used.
+- Every config table is versioned or has validity ranges; bookings snapshot what they used. Changes follow draft, approve, publish and are audited; financial changes need a second approver.
+
+Rule tables by owner (moved out of `cfg_`):
+- `pricing`: `price_tax_rule(id, country, scope, rate_bp, applies_to, valid_from, valid_to, version)`; `price_fee_rule(id, market, currency, kind {SERVICE_FEE, COMMISSION}, payer {CUSTOMER, VENDOR}, percent_bp, fixed_minor, min_minor, max_minor, enabled, valid_from, valid_to, version, status)` — commission rows exist but none is enabled by default (ADR-35)
+- `payment`: `pay_method(code, kind)`, `pay_market_method(market, currency, method, provider_key, payer_scope {DOMESTIC_ONLY, ANY}, payer_country?, enabled, config_ref)`
+- `onboarding`: `onb_document_requirement(country, subject_type, applicant_type, document_type, mandatory)`
+- `booking`: `book_cancellation_policy(code, country?, version, status)` + `book_cancellation_policy_tier(policy_code, version, hours_before_check_in, refund_percent_accommodation, refund_cleaning_fee, refund_service_fee, refund_taxes)` `[OD-3]`; `book_property_policy(property_id, policy_code)` records the property's selected policy (moved from `cat_property`, Proposed); bookings snapshot the resolved tiers
+- `subscription`: `sub_tax_rule(id, country, rate_bp, applies_to, valid_from, valid_to, version)` for subscription invoices (Proposed)
 
 ### audit
-- `audit_event(id, occurred_at, actor_type, actor_id, actor_org_id, action, subject_type, subject_id, outcome, ip, user_agent, correlation_id, details jsonb)` — append-only: a trigger rejects `UPDATE`/`DELETE`/`TRUNCATE` (also on every partition), monthly range partitions on `occurred_at` are created by `audit_ensure_partition` (scheduled job keeps `zellastay.audit.partitions-ahead` months ready; a default partition catches stragglers and is reported), and deployed environments also run the application with a role that has no `UPDATE`/`DELETE`/`TRUNCATE` grant. `ip` and `user_agent` are personal data (retention `[LEGAL]`).
+- `audit_event(id, occurred_at, actor_type, actor_id, actor_org_id, action, subject_type, subject_id, outcome, ip, user_agent, correlation_id, country (nullable, ADR-40), details jsonb)` — append-only: a trigger rejects `UPDATE`/`DELETE`/`TRUNCATE` (also on every partition), monthly range partitions on `occurred_at` are created by `audit_ensure_partition` (scheduled job keeps `zellastay.audit.partitions-ahead` months ready; a default partition catches stragglers and is reported), and deployed environments also run the application with a role that has no `UPDATE`/`DELETE`/`TRUNCATE` grant. `ip` and `user_agent` are personal data (retention `[LEGAL]`).
 
 ### ident (identity)
 - `ident_account(id, kind {CUSTOMER, VENDOR_USER, ADMIN}, email, email_verified_at, phone_e164, phone_verified_at, password_hash, status, locale, country, ...)` — unique (lower(email)) and unique phone where not null, partial per kind
 - `ident_profile(account_id, first_name, last_name, avatar_media_id, date_of_birth?, ...)` `[LEGAL]` for which fields are collected
 - `ident_session(id, account_id, audience, mfa_verified, created_at, absolute_expires_at, idle_timeout_seconds, last_used_at, revoked_at, revoked_reason)` is the login; `ident_refresh_token(id, session_id, token_hash, issued_at, used_at, replaced_by)` holds its rotation chain (a session is the token family). Account status values `PENDING_VERIFICATION, ACTIVE, SUSPENDED, DEACTIVATED, ANONYMIZED`; email unique per `(kind, email)`
 - `ident_challenge(id, account_id, purpose {EMAIL_VERIFICATION, PASSWORD_RESET, ADMIN_MFA_LOGIN}, secret_hash, expires_at, attempts, consumed_at, created_at)` replaces `ident_verification_code`; codes are HMAC-hashed with a server pepper, link tokens and MFA tickets are SHA-256 hashed; credential events are written to `audit_event`
-- `ident_admin_role(account_id, role, granted_at)`; `ident_admin_role_permission(role, permission)` is reference data mapping roles to permissions (Slice A seeds only `SUPER_ADMIN`); `ident_admin_mfa(account_id, secret_ciphertext, enrolled_at, last_used_step)` with the authenticator seed AES-GCM encrypted; `ident_recovery_code(account_id, code_hash, used_at)`; `ident_device
+- `ident_admin_role(account_id, role, granted_at)` plus a country scope per grant (all countries or a list; existing grants migrate to all countries, ADR-40, Proposed); `ident_admin_role_permission(role, permission)` is reference data mapping roles to permissions (Slice A seeds only `SUPER_ADMIN`); `ident_admin_mfa(account_id, secret_ciphertext, enrolled_at, last_used_step)` with the authenticator seed AES-GCM encrypted; `ident_recovery_code(account_id, code_hash, used_at)`; `ident_device
 - `ident_booking_access_token(id, booking_id, token_hash, expires_at, revoked_at)` (guest access)
 - Notification preferences are owned by `notif_` (`notif_preference`), not identity.
 
@@ -70,7 +76,7 @@ Key columns only. `+std` = standard columns (id, created_at, updated_at, version
 - `sub_invoice(id, subscription_id, number, period_start, period_end, amount_minor, currency, tax_minor, status, payment_id?)`
 
 ### cat (catalog)
-- `cat_property(id, organization_id, type, country, name, slug, address jsonb, location geography(Point), time_zone, booking_mode {INSTANT, REQUEST}, cancellation_policy_code, check_in_from, check_in_until, check_out_until, approval_status {DRAFT, PENDING_REVIEW, APPROVED, REJECTED, SUSPENDED, ARCHIVED}, published boolean, rating_cache, ..., version)`
+- `cat_property(id, organization_id, type, country, name, slug, address jsonb, location geography(Point), time_zone, booking_mode {INSTANT, REQUEST}, check_in_from, check_in_until, check_out_until, approval_status {DRAFT, PENDING_REVIEW, APPROVED, REJECTED, SUSPENDED, ARCHIVED}, published boolean, rating_cache, ..., version)`
 - `cat_property_translation(property_id, locale, description, house_rules, check_in_instructions)`
 - `cat_property_amenity(property_id, amenity_code)`; `cat_amenity(code, category, icon)` + `cat_amenity_translation`
 - `cat_property_media(property_id, media_asset_id, sort, caption_i18n jsonb, is_cover)`
@@ -97,11 +103,11 @@ Key columns only. `+std` = standard columns (id, created_at, updated_at, version
 - `promo_redemption(id, code_id/voucher_id, booking_id, account_or_guest_key, amount_minor, status {RESERVED, APPLIED, REVERSED})` unique (code_id, booking_id)
 
 ### book (booking)
-- `book_booking(id, reference unique, customer_id?, guest_contact jsonb?, property_id, organization_id, unit_type_id, mode, status, check_in date, check_out date, guests, currency, accommodation_minor, taxes_minor, fees_minor, discount_minor, service_fee_minor, total_minor, quote_id, price_snapshot jsonb, policy_snapshot jsonb, payment_due_at, respond_by, cancelled_by, cancelled_at, version, ...)`
+- `book_booking(id, reference unique, customer_id?, guest_contact jsonb?, property_id, property_country, customer_country?, organization_id, unit_type_id, mode, status, check_in date, check_out date, guests, currency, accommodation_minor, taxes_minor, fees_minor, discount_minor, service_fee_minor, commission_minor (0 unless a commission rule applied), commission_payer?, fee_rule_snapshot jsonb, total_minor, quote_id, price_snapshot jsonb, policy_snapshot jsonb, payment_due_at, respond_by, cancelled_by, cancelled_at, version, ...)`
 - `book_status_history(id, booking_id, from_status, to_status, actor_type, actor_id, reason, at)`
 - `book_cancellation(booking_id, policy_result jsonb, refund_due_minor, ...)`
 - `book_idempotency(key, actor_key, request_hash, response jsonb, created_at)` unique (actor_key, key)
-- Constraint: `check_out > check_in`; `total_minor = accommodation + taxes + fees + service_fee - discount` verified by a CHECK.
+- Constraint: `check_out > check_in`; `total_minor = accommodation + taxes + fees + service_fee - discount` verified by a CHECK (a commission paid by the vendor is not part of the customer total).
 
 ### pay (payment)
 - `pay_payment(id, reference_type, reference_id, payer_account_id?, country, method, provider_key, amount_minor, currency, status {INITIATED, PENDING, SUCCEEDED, FAILED, EXPIRED}, provider_ref, idempotency_key, failure_code, version)` unique (provider_key, provider_ref), unique (reference_type, reference_id, idempotency_key)

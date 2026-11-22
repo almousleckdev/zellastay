@@ -41,6 +41,12 @@ public class AccountFixtures {
     return "user-" + UUID.randomUUID() + "@example.com";
   }
 
+  public String activeCustomerEmail() {
+    String email = uniqueEmail();
+    active(AccountKind.CUSTOMER, email);
+    return email;
+  }
+
   public Account active(AccountKind kind, String email) {
     Account account = pending(kind, email);
     account.verifyEmail(clock.instant());

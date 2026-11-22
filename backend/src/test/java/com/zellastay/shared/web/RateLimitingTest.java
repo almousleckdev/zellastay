@@ -2,7 +2,6 @@ package com.zellastay.shared.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.zellastay.shared.web.RateLimitCounter.Hit;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -45,7 +44,7 @@ class RateLimitingTest {
     assertThat(counter.hit("a", WINDOW).count()).isEqualTo(2);
     assertThat(counter.hit("b", WINDOW).count()).isEqualTo(1);
     clock.advance(Duration.ofSeconds(59));
-    Hit late = counter.hit("a", WINDOW);
+    RateLimitHit late = counter.hit("a", WINDOW);
     assertThat(late.count()).isEqualTo(3);
     assertThat(late.remaining()).isEqualTo(Duration.ofSeconds(1));
     clock.advance(Duration.ofSeconds(2));
@@ -67,7 +66,7 @@ class RateLimitingTest {
 
   @Test
   void aWorkingPrimaryIsPreferred() {
-    RateLimitCounter primary = (key, window) -> new Hit(42, window);
+    RateLimitCounter primary = (key, window) -> new RateLimitHit(42, window);
     ResilientRateLimitCounter counter =
         new ResilientRateLimitCounter(primary, new InMemoryRateLimitCounter(new MutableClock()));
 

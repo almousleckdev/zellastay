@@ -53,6 +53,17 @@ tasks.withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8"
 }
 
+val checkFileSize by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Fails when a source file exceeds the repository line limit (ADR-43)."
+    workingDir = rootDir.parentFile
+    commandLine("python3", "-I", "infra/tools/check-file-size.py")
+}
+
+tasks.check {
+    dependsOn(checkFileSize)
+}
+
 tasks.test {
     useJUnitPlatform()
     finalizedBy(tasks.jacocoTestReport)

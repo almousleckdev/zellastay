@@ -1,16 +1,13 @@
 package com.zellastay.identity.application;
 
-import com.zellastay.audit.api.AuditEntry;
-import com.zellastay.audit.api.AuditOutcome;
-import com.zellastay.audit.api.AuditRecorder;
 import com.zellastay.identity.api.AccountStatus;
 import com.zellastay.identity.api.RefreshInvalidException;
 import com.zellastay.identity.domain.Account;
 import com.zellastay.identity.domain.AccountRepository;
 import com.zellastay.identity.domain.RefreshRotation;
-import com.zellastay.identity.domain.RefreshRotation.Decision;
 import com.zellastay.identity.domain.RefreshToken;
 import com.zellastay.identity.domain.RefreshTokenRepository;
+import com.zellastay.identity.domain.RotationDecision;
 import com.zellastay.identity.domain.SecretHasher;
 import com.zellastay.identity.domain.Session;
 import com.zellastay.identity.domain.SessionRepository;
@@ -37,7 +34,7 @@ public class RefreshSessionService {
   private final SessionIssuer issuer;
   private final SessionRevoker revoker;
   private final TokenSettings settings;
-  private final AuditRecorder audit;
+  private final IdentityAuditTrail trail;
   private final TransactionTemplate transaction;
   private final Clock clock;
 
@@ -49,7 +46,7 @@ public class RefreshSessionService {
       SessionIssuer issuer,
       SessionRevoker revoker,
       TokenSettings settings,
-      AuditRecorder audit,
+      IdentityAuditTrail trail,
       TransactionTemplate transaction,
       Clock clock) {
     this.refreshTokens = refreshTokens;
@@ -59,7 +56,7 @@ public class RefreshSessionService {
     this.issuer = issuer;
     this.revoker = revoker;
     this.settings = settings;
-    this.audit = audit;
+    this.trail = trail;
     this.transaction = transaction;
     this.clock = clock;
   }
@@ -71,13 +68,8 @@ public class RefreshSessionService {
     Outcome outcome = transaction.execute(status -> rotate(audience, hasher.digest(presented)));
     if (outcome == null || outcome.pair() == null) {
       if (outcome != null && outcome.reusedBy() != null) {
-        audit.recordBestEffort(
-            new AuditEntry(
-                AuditActors.actor(outcome.reusedBy()),
-                IdentityAuditAction.REFRESH_REUSE_DETECTED,
-                AuditActors.subject(outcome.reusedBy()),
-                AuditOutcome.DENIED,
-                Map.of()));
+        trail.deniedBestEffort(
+            outcome.reusedBy(), IdentityAuditAction.REFRESH_REUSE_DETECTED, Map.of());
       }
       throw new RefreshInvalidException();
     }
@@ -96,7 +88,7 @@ public class RefreshSessionService {
       return rejected();
     }
     Instant now = clock.instant();
-    Decision decision =
+    RotationDecision decision =
         RefreshRotation.decide(session.get(), token.get(), now, settings.refreshReuseGrace());
     return switch (decision) {
       case ROTATE -> rotateFrom(token.get(), session.get(), now);

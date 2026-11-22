@@ -12,4 +12,22 @@ public interface AudienceRoutes {
 
   /** Ant-style patterns, for example {@code /api/v1/vendor/organizations/**}. */
   List<String> patterns();
+
+  static AudienceRoutes of(TokenAudience audience, String... patterns) {
+    if (patterns.length == 0) {
+      throw new IllegalArgumentException("at least one route pattern is required");
+    }
+    List<String> copy = List.of(patterns);
+    return new AudienceRoutes() {
+      @Override
+      public TokenAudience audience() {
+        return audience;
+      }
+
+      @Override
+      public List<String> patterns() {
+        return copy;
+      }
+    };
+  }
 }

@@ -1,8 +1,5 @@
 package com.zellastay.identity.application;
 
-import com.zellastay.audit.api.AuditEntry;
-import com.zellastay.audit.api.AuditOutcome;
-import com.zellastay.audit.api.AuditRecorder;
 import com.zellastay.identity.domain.Account;
 import com.zellastay.identity.domain.AccountRepository;
 import com.zellastay.identity.domain.RefreshTokenRepository;
@@ -23,7 +20,7 @@ public class LogoutService {
   private final AccountRepository accounts;
   private final SecretHasher hasher;
   private final SessionRevoker revoker;
-  private final AuditRecorder audit;
+  private final IdentityAuditTrail trail;
   private final TransactionTemplate transaction;
 
   LogoutService(
@@ -32,14 +29,14 @@ public class LogoutService {
       AccountRepository accounts,
       SecretHasher hasher,
       SessionRevoker revoker,
-      AuditRecorder audit,
+      IdentityAuditTrail trail,
       TransactionTemplate transaction) {
     this.refreshTokens = refreshTokens;
     this.sessions = sessions;
     this.accounts = accounts;
     this.hasher = hasher;
     this.revoker = revoker;
-    this.audit = audit;
+    this.trail = trail;
     this.transaction = transaction;
   }
 
@@ -56,14 +53,7 @@ public class LogoutService {
                     .filter(session -> session.revokedAt() == null)
                     .flatMap(this::end));
     ended.ifPresent(
-        account ->
-            audit.recordBestEffort(
-                new AuditEntry(
-                    AuditActors.actor(account),
-                    IdentityAuditAction.LOGOUT,
-                    AuditActors.subject(account),
-                    AuditOutcome.SUCCESS,
-                    Map.of())));
+        account -> trail.succeededBestEffort(account, IdentityAuditAction.LOGOUT, Map.of()));
   }
 
   private Optional<Account> end(Session session) {

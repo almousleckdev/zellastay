@@ -71,7 +71,16 @@ class ChallengeIssuer {
             hasher.digest(secret),
             settings.resetTokenTtl(),
             now);
-    return id + "." + secret;
+    return new ChallengeToken(id, secret).value();
+  }
+
+  /** Single-use ticket {@code <challengeId>.<random>}, good only for an admin's second factor. */
+  String issueMfaTicket(Account account, Duration ttl) {
+    String secret = generator.token();
+    UUID id =
+        insert(
+            account, ChallengePurpose.ADMIN_MFA_LOGIN, hasher.digest(secret), ttl, clock.instant());
+    return new ChallengeToken(id, secret).value();
   }
 
   private UUID insert(
