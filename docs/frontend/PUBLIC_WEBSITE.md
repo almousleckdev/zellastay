@@ -1,6 +1,6 @@
 # Public Booking Website (Next.js + TypeScript)
 
-Directory: `apps/public-web`. Audience: visitors, customers, guests, and prospective vendors (vendor self-registration lives here).
+Directory: `web/website`. Audience: visitors, customers, guests, and prospective vendors (vendor self-registration lives here).
 
 ## 1. Scope
 
@@ -9,6 +9,8 @@ Home, destination landing pages, search results (list + map), property detail, q
 Note: after approval, vendors operate in the Vendor Dashboard ([VENDOR_DASHBOARD.md](VENDOR_DASHBOARD.md)); the public site links to it.
 
 ## 2. Architecture
+
+The shared Next.js standards (feature structure, shared components, small files, strict types, one API client, consistent states) in [WEB_ARCHITECTURE.md](WEB_ARCHITECTURE.md) are mandatory; error handling follows [ERROR_HANDLING.md](../engineering/ERROR_HANDLING.md) §5; media follows [MEDIA_ARCHITECTURE.md](../architecture/MEDIA_ARCHITECTURE.md).
 
 - Next.js (App Router), TypeScript `strict`, React Server Components for public SEO pages, client components only where interactivity is needed.
 - Rendering strategy: ISR/SSR for property and destination pages (cache tags revalidated on catalog events via a signed revalidation webhook), SSR for search with edge caching of anonymous queries, CSR for authenticated account areas.

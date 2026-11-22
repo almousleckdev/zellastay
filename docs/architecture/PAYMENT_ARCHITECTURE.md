@@ -21,12 +21,17 @@ interface PaymentProvider {            // one adapter per provider, in payment.i
 }
 ```
 
-- A `PaymentRouter` selects the provider from `cfg_country_payment_method` (country + method + currency). Adding a country = adding configuration and, if needed, a new adapter class. Business code never names a provider.
+- A `PaymentRouter` selects the provider from the payment module's own method configuration (`pay_method`, `pay_market_method`; ADR-36) using the **property's market**, the booking currency, the method and the payer scope. Adding a country = adding configuration and, if needed, a new adapter class. Business code never names a provider.
+- **Cross-border bookings (ADR-37):** the property's country governs the booking currency and the method set. International cards are supported for cross-border bookings. A mobile-money method is offered across borders only if the provider integration declares that exact payer-country and market pair; otherwise it is domestic-only. A method available in one country is never assumed to work in another.
+- **Currency:** the customer is charged in the property's currency. There is no automatic conversion by Zella Stay; a card issuer's own conversion is disclosed to the customer `[LEGAL]` (L-10, L-19). `XAF` and `XOF` are distinct currencies and are never mixed within a payment or ledger transaction. Refunds use the original currency and the original method.
+- **Ledger and reconciliation** are per currency; provider reports are reconciled per provider and market. Open: how the payer country is determined and who bears cross-border refund and exchange losses (OD-34).
+- **Commission (ADR-35):** if a market enables vendor commission, it is delivered through the provider's split and settlement mechanism and mirrored in the ledger; the booking snapshots the rule applied. Never by Zella Stay holding funds (ADR-20).
+- **Legal gate per country:** L-1 must be closed for a country before any live transaction in that market. Provider capabilities are researched per country (OD-18).
 - Adapters translate provider errors into a small internal failure taxonomy (`DECLINED`, `INSUFFICIENT_FUNDS`, `TIMEOUT_UNKNOWN`, `INVALID_ACCOUNT`, `PROVIDER_UNAVAILABLE`, …); `TIMEOUT_UNKNOWN` never marks a payment failed — it stays `PENDING` until resolved by webhook/poll.
 - Every adapter call has timeout, bounded retry (only for idempotent calls), and a circuit breaker.
 - Contract tests per adapter run against provider sandboxes in a nightly pipeline and against recorded fixtures in CI.
 
-## 3. Payment methods at launch (Gabon)
+## 3. Payment methods at launch (Gabon; other markets researched before their activation)
 
 | Method | Interaction | Notes |
 |---|---|---|

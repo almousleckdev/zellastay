@@ -1,0 +1,26 @@
+name: quality-ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  repository-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Repository tooling tests
+        run: python3 -I -m unittest discover -s infra/tools/tests
+      - name: Source files stay within the 280-line limit (ADR-43)
+        run: python3 -I infra/tools/check-file-size.py

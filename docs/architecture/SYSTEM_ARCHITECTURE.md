@@ -6,7 +6,7 @@
  Customer Mobile (Flutter/Riverpod) ─┐
  Public Website (Next.js)           ─┤  HTTPS REST /api/v1          ┌─ PostgreSQL (system of record)
  Vendor Dashboard (Next.js)         ─┼─ WSS STOMP /ws ──► Zella Stay ├─ Redis (cache, rate limits, pub/sub, locks-lite)
- Admin Dashboard (Next.js)          ─┘   (via edge/CDN/WAF)  Backend ├─ Object storage (S3-compatible: media, documents)
+ Admin Dashboard (Next.js)          ─┘   (via edge/CDN/WAF)  Backend ├─ Cloudinary (media, documents)
                                           modular monolith           ├─ Payment providers (Airtel, Moov, card PSP)
                                           (Java 21, Spring Boot)     ├─ Notification providers (email, SMS, push)
                                                                      └─ Kafka (introduced only when justified)
@@ -27,6 +27,8 @@ One backend deployable, one primary PostgreSQL database. Four independent fronte
 | Auth | First-party identity module issuing short-lived JWT access tokens + rotating refresh tokens `[OD-10]` | |
 | Customer mobile | Flutter + Riverpod | |
 | Web apps | Next.js + TypeScript (public, vendor, admin) | pnpm workspace with shared packages |
+| Media storage | Cloudinary (backend-only API secret; signed uploads; named delivery variants) | [MEDIA_ARCHITECTURE.md](MEDIA_ARCHITECTURE.md) |
+| Error handling | RFC 9457 problem+json from one central handler; typed clients | [ERROR_HANDLING.md](../engineering/ERROR_HANDLING.md) |
 | Infra | Docker, GitHub Actions, cloud-ready (12-factor, no provider lock-in) `[OD-15]` | |
 | Observability | OpenTelemetry, Micrometer/Prometheus, structured JSON logs | See [OBSERVABILITY.md](../engineering/OBSERVABILITY.md) |
 
@@ -44,7 +46,7 @@ One backend deployable, one primary PostgreSQL database. Four independent fronte
 - WebSocket traffic terminates on the same application (separate listener port or path) initially; may be split into a dedicated deployment of the same artifact (profile-based) if connection counts demand it. Fan-out across instances goes through Redis pub/sub (§8).
 - Scheduled jobs (hold expiry, outbox retry, reconciliation, subscription renewal) use database-backed locking (`SKIP LOCKED` / ShedLock-style) so they are safe on N instances.
 - Environments: local (Docker Compose), CI ephemeral, staging, production. Config via environment variables / secret manager only. See [DEVOPS.md](../engineering/DEVOPS.md).
-- Object storage: public media behind CDN; private documents (identity, business) in a separate private bucket accessed through short-lived signed URLs.
+- Media: Cloudinary (ADR-26) holds all binary media; PostgreSQL stores only public IDs and metadata. Public media is served from the provider CDN; private documents and chat images use authenticated delivery with short-lived signed URLs generated after an authorization check ([MEDIA_ARCHITECTURE.md](MEDIA_ARCHITECTURE.md)).
 
 ## 5. Data and consistency principles
 
@@ -107,7 +109,7 @@ One backend deployable, one primary PostgreSQL database. Four independent fronte
 - Defense in depth: (1) the authenticated principal carries organization memberships and property scopes; (2) application services receive an explicit `TenantContext` and every repository query for tenant data filters by it (no unscoped finders for vendor data); (3) PostgreSQL **row-level security** policies keyed on a session variable set per transaction as a backstop `[ADR-7]`; (4) automated tests assert that user A of org X cannot read or mutate any resource of org Y across every vendor endpoint (parameterized authorization test suite).
 - Admin and support access crosses tenants only through explicit admin-audience endpoints with their own permissions and audit logging.
 - Customer data is not tenant-owned; vendors see only the customer data necessary for their bookings (field-level minimization).
-- Object storage keys are namespaced by organization; signed URLs are generated per request after an authorization check.
+- Media folders and tags are namespaced by environment, kind and owner; private URLs are generated per request after an authorization check.
 
 ## 11. Failure handling summary
 

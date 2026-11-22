@@ -1,6 +1,6 @@
 # Vendor Dashboard (Next.js + TypeScript)
 
-Directory: `apps/vendor-dashboard`. Audience: staff of vendor organizations (Owner, Administrator, Manager, Receptionist, Accountant). Consumes `/api/v1/vendor/**` and `/ws`. Authentication is separate from the customer apps (vendor token audience).
+Directory: `web/vendor`. Audience: staff of vendor organizations (Owner, Administrator, Manager, Receptionist, Accountant). Consumes `/api/v1/vendor/**` and `/ws`. Authentication is separate from the customer apps (vendor token audience).
 
 ## 1. Information architecture
 
@@ -23,6 +23,8 @@ Directory: `apps/vendor-dashboard`. Audience: staff of vendor organizations (Own
 Navigation is generated from the user's effective permissions delivered by the API; the UI hides what the user cannot do but **never relies on hiding for security**. Organization switcher for users with multiple memberships; property switcher for scoped users.
 
 ## 2. Architecture
+
+Mandatory shared standards: [WEB_ARCHITECTURE.md](WEB_ARCHITECTURE.md) and [ERROR_HANDLING.md](../engineering/ERROR_HANDLING.md) §5. Property photos and videos use backend-issued signed uploads with upload progress, per-file validation feedback and server-side rejection handling ([MEDIA_ARCHITECTURE.md](../architecture/MEDIA_ARCHITECTURE.md) §3.2); verification documents are uploaded through the server-proxied flow.
 
 Same stack and conventions as the public website ([PUBLIC_WEBSITE.md](PUBLIC_WEBSITE.md)): Next.js App Router, TypeScript strict, generated API client, TanStack Query, BFF cookie session, `next-intl` (fr default, en), shared `packages/ui`.
 

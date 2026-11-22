@@ -7,11 +7,16 @@ Phases are ordered by dependency and risk. Dates are intentionally absent; they 
 - CI skeleton, Docker Compose for local dependencies (PostgreSQL, Redis), migrations tooling (Flyway), OpenAPI generation pipeline, design tokens.
 - Platform skeleton: identity basics, audit, platformconfig (countries, currencies, locales), observability baseline, outbox infrastructure.
 - Exit: empty-but-deployable pipeline to a staging environment; architecture tests enforcing module boundaries.
+- **Phase 0 extension:** centralized backend error handling (request-id filter, problem factory, global handler, error controller, bilingual bundles, code catalog) and backend enforcement tooling (architecture and error-catalog tests) are implemented; Flutter and Next.js enforcement activates as those apps are scaffolded ([STANDARDS_ENFORCEMENT.md](../engineering/STANDARDS_ENFORCEMENT.md)).
 - **Status (2026-11-01):** done — backend project, 22 module packages with enforced dependency contract, Flyway + outbox table, PostgreSQL/Redis dev stack, Dockerfile, CI workflows (backend, docs), architecture and integration tests, typed environment configuration and mounted-secret support. **Not done:** `apps/*` and `packages/*` scaffolding, IaC (`infra/` beyond Docker), OpenAPI generation pipeline, design tokens, audit/identity/platformconfig skeletons beyond empty modules, security starter (deny-by-default) which arrives with the `identity` module, OpenTelemetry tracing, staging deployment. See the Phase 0 report for details.
 
-## Phase 1 — Supply side and verification (**blocked until Phase 0 is approved**)
+- **Status (2026-11-22):** Phase 0 is approved and Phase 1 Slice A (identity and audit) is implemented on branch `identity-audit-slice`, awaiting review and merge. The three Next.js apps and the Flutter app exist only as unmodified scaffolds (`web/*`, `client/`); `packages/` is empty. The enforcement and foundation work that must precede Slice B is sequenced in [DEVELOPMENT_PROCESS.md](../engineering/DEVELOPMENT_PROCESS.md): 280-line enforcement, shared value objects, country-scoped admin permissions, `platformconfig`, the RLS spike (a gate, [TENANCY.md](../architecture/TENANCY.md)), notification core, and deployment readiness ([RAILWAY_DEPLOYMENT.md](../engineering/RAILWAY_DEPLOYMENT.md)).
+- **Launch strategy (ADR-38):** Gabon is the first commercial market; Mali, Côte d'Ivoire and Senegal are prepared architecturally ([MULTI_COUNTRY.md](../architecture/MULTI_COUNTRY.md)). Each market's activation needs complete configuration, operational readiness and its own legal clearance (L-1 per country).
+
+## Phase 1 — Supply side and verification (Phase 0 approved; Slice A implemented; slices B to F in progress order)
 - Identity (customers, vendor users, admins), organization and staff roles, vendor registration, document upload, verification queue, property drafting, media handling, admin moderation, audit viewer.
 - Notification core (templates, outbox, email + in-app first; SMS provider integration validated).
+- Media spike (OD-29) before any document or gallery upload ships: verify authenticated delivery for PDFs/scans, malware scanning approach, strict transformation controls, backup/purge behavior, plan limits; L-18 closed before production documents.
 - Exit: an approved vendor can create a property that is approved but not yet bookable.
 
 ## Phase 2 — Core marketplace transaction (blocking for live payments: OD-18 provider selection, L-1 legal validation; OD-6a timer values)

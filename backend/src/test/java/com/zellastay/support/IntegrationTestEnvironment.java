@@ -9,7 +9,7 @@ public class IntegrationTestEnvironment
 
   @Override
   public void initialize(ConfigurableApplicationContext context) {
-    TestInfrastructure.applicationEnvironment()
+    ApplicationTestEnvironment.variables()
         .forEach((key, value) -> TestPropertyValues.of(key + "=" + value).applyTo(context));
   }
 }

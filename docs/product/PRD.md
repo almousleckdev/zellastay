@@ -137,6 +137,9 @@ Requirement IDs are stable and referenced from tests and other documents. Priori
 | NFR-8 | Internationalization: no user-visible string, currency format, date format or time zone is hardcoded. |
 | NFR-9 | Auditability: privileged and financial actions are recorded immutably. |
 | NFR-10 | Operability: every module emits structured logs, metrics and traces. |
+| NFR-11 | Error consistency: one error contract, one handler per tier, no internal details exposed, every error traceable by request id ([ERROR_HANDLING.md](../engineering/ERROR_HANDLING.md)). |
+| NFR-12 | Native mobile UX: iOS uses Cupertino components and patterns, Android uses Material, never mixed ([CUSTOMER_MOBILE.md](../frontend/CUSTOMER_MOBILE.md) §3). |
+| NFR-13 | Media: stored in Cloudinary via a dedicated backend module with server-side validation, signed uploads, private access control and cleanup ([MEDIA_ARCHITECTURE.md](../architecture/MEDIA_ARCHITECTURE.md)). |
 
 ## 6. Constraints and assumptions
 

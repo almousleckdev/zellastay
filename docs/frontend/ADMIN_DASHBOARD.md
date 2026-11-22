@@ -1,6 +1,6 @@
 # Platform Administration Dashboard (Next.js + TypeScript)
 
-Directory: `apps/admin-dashboard`. Audience: Zella Stay staff. Consumes `/api/v1/admin/**`. Hardened differently from other apps: separate deployment and domain, network restrictions (VPN/IP allow-list `[OD-15]`), mandatory second factor, short sessions, no public indexing, strict CSP, all actions audited.
+Directory: `web/admin`. Audience: Zella Stay staff. Consumes `/api/v1/admin/**`. Hardened differently from other apps: separate deployment and domain, network restrictions (VPN/IP allow-list `[OD-15]`), mandatory second factor, short sessions, no public indexing, strict CSP, all actions audited.
 
 ## 1. Admin roles
 
@@ -31,6 +31,8 @@ Roles and permissions are data-driven and enforced server-side; the UI mirrors t
 13. **Audit log viewer:** filter by actor, subject, action, date; export restricted.
 
 ## 3. Architecture
+
+Mandatory shared standards: [WEB_ARCHITECTURE.md](WEB_ARCHITECTURE.md) and [ERROR_HANDLING.md](../engineering/ERROR_HANDLING.md) §5. Verification documents open only through short-lived signed URLs requested per view and audited ([MEDIA_ARCHITECTURE.md](../architecture/MEDIA_ARCHITECTURE.md) §4).
 
 Same stack as the other web apps ([PUBLIC_WEBSITE.md](PUBLIC_WEBSITE.md)). Admin UI is English and French (`fr` default). Heavy tables use server-side pagination and saved filters. Destructive or financial actions use a confirmation pattern showing exact impact, requiring a reason field, and use `Idempotency-Key`. Sensitive data is masked by default; "reveal" requires reason and creates an audit event.
 

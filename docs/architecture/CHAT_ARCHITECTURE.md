@@ -52,8 +52,8 @@ Typing indicators are ephemeral (not persisted, rate-limited). Presence is optio
 
 ## 5. Attachments (images)
 
-- Upload via REST to `media` (pre-signed upload or multipart), type allow-list (JPEG, PNG, WebP, HEIC converted), size limit, magic-number validation, re-encode, EXIF stripped, malware scan hook, status `READY` before it can be attached to a message.
-- Stored in a private bucket namespaced by conversation; delivered via short-lived signed URLs after the same access policy check. Thumbnails generated.
+- Upload via REST to `media` (server-proxied multipart), type allow-list (JPEG, PNG, WebP, HEIC converted), size limit, magic-number validation, re-encode, EXIF stripped, malware scan hook, status `READY` before it can be attached to a message.
+- Stored as Cloudinary `authenticated` assets namespaced by conversation; delivered via short-lived signed URLs after the same access policy check. Thumbnails are eager derivatives created at upload (authenticated assets do not allow on-the-fly transformations).
 - Quotas per conversation/day to limit abuse.
 
 ## 6. Unread counters and receipts

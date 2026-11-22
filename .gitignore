@@ -10,6 +10,7 @@
 *.p12
 *.jks
 *.log
+infra/docker/secrets/
 
 # Backend
 backend/**/target/
@@ -29,3 +30,7 @@ coverage/
 **/.flutter-plugins*
 **/Pods/
 **/*.g.dart.bak
+
+# Python
+__pycache__/
+*.pyc

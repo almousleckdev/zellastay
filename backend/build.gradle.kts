@@ -34,6 +34,10 @@ dependencies {
     implementation("org.springframework.modulith:spring-modulith-starter-core")
     implementation("org.springframework.modulith:spring-modulith-starter-jdbc")
     implementation("io.micrometer:micrometer-registry-prometheus")
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.security:spring-security-crypto")
+    implementation("org.springframework.security:spring-security-oauth2-jose")
+    implementation(libs.bouncycastle.prov)
     runtimeOnly("org.postgresql:postgresql")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -47,6 +51,17 @@ dependencies {
 tasks.withType<JavaCompile>().configureEach {
     options.compilerArgs.addAll(listOf("-parameters", "-Xlint:all", "-Werror"))
     options.encoding = "UTF-8"
+}
+
+val checkFileSize by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Fails when a source file exceeds the repository line limit (ADR-43)."
+    workingDir = rootDir.parentFile
+    commandLine("python3", "-I", "infra/tools/check-file-size.py")
+}
+
+tasks.check {
+    dependsOn(checkFileSize)
 }
 
 tasks.test {

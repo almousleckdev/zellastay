@@ -50,24 +50,26 @@ Permissions are modeled as fine-grained permission strings (`booking.approve`, `
 
 - Passwords: Argon2id (or bcrypt cost ≥ 12 if Argon2 unavailable), breached-password check, no composition rules beyond length ≥ 10.
 - Phone/email verification with hashed, short-lived, attempt-limited codes; SMS pumping protection (per-number and per-IP limits, country allow-list).
-- JWT access tokens: ≤ 15 min, asymmetric signing (rotatable keys, `kid`), audience-bound, minimal claims (subject, audience, session id, org memberships summary not authoritative for writes — permissions re-checked from DB or short cache).
+- JWT access tokens: ≤ 15 min, ES256 signing (ADR-31; rotatable keys, `kid`), audience-bound, minimal claims (subject, audience, session id, org memberships summary not authoritative for writes — permissions re-checked from DB or short cache).
 - Refresh tokens: opaque, hashed at rest, rotating, reuse detection revokes the family; bound to device record.
 - Admin: mandatory TOTP/WebAuthn second factor; short sessions; no self-registration.
 - Account lockout/backoff on repeated failures; uniform error messages (no user enumeration).
-- Whether to adopt an external IdP is open `[OD-10]`; the identity module's API isolates the choice.
+- Implemented in Slice A: ES256 access tokens (ADR-31), rotating refresh tokens with reuse detection, per-audience filter chains with deny-by-default routes and a fixed-window per-address rate limiter (ADR-34), progressive account lockout, uniform failures, TOTP admin second factor with encrypted seeds and recovery codes, and the audit trail (ADR-32). Lifetimes and thresholds are typed configuration.
+- Identity is in-house (ADR-30). Sessions, lockout, verification and reset rules, the admin second-factor step and the audit events are specified in docs/superpowers/specs/2026-11-02-phase1-slice-a-identity-audit-design.md; values (lifetimes, thresholds) are typed configuration, not code.
 
 ## 4. Data protection in transit and at rest
 
 - TLS 1.2+ everywhere; HSTS on web apps; certificate pinning in mobile is optional hardening decided later.
-- PostgreSQL and object storage encrypted at rest (provider-managed keys minimum). Application-level encryption for the most sensitive fields (identity document numbers, if stored) with envelope encryption and key rotation `[LEGAL]` for what may be stored.
+- PostgreSQL encrypted at rest; media at rest is encrypted by the provider (Cloudinary), whose security posture, sub-processors and data location are reviewed under L-18. Application-level encryption for the most sensitive fields (identity document numbers, if stored) with envelope encryption and key rotation `[LEGAL]` for what may be stored.
 - Secrets only from environment/secret manager; none in the repository, images, or CI logs. Pre-commit and CI secret scanning.
-- Private documents: separate bucket, no public ACLs, signed URLs ≤ 5 min, access logged in audit.
+- Private documents and chat images: Cloudinary `authenticated` delivery only, never public; signed URLs generated server-side after authorization, expiry ≤ 5 minutes, every document access audited. The Cloudinary API secret exists only in the backend (secret manager/mounted file) and is never sent to, built into or logged by any frontend; scanned by the standards checker. Verification documents are not uploaded to production until L-18 is closed.
+- Error responses never expose stack traces, exception types, SQL, constraint names, hostnames or rejected values; unexpected errors return a generic code with a request id ([ERROR_HANDLING.md](../engineering/ERROR_HANDLING.md)).
 - Card data: **never touches our servers.** Card entry via provider-hosted fields/redirect (tokenization) to stay out of PCI scope beyond the lowest SAQ tier; validated with the chosen PSP `[LEGAL]`.
 
 ## 5. Application security controls
 
 - Input validation (allow-list), output encoding (web apps), parameterized queries only (no string-built SQL), safe file handling.
-- Upload pipeline: size/type/magic-number checks, image re-encoding (strips EXIF GPS for chat/gallery as appropriate), malware scan hook, storage key randomization, never serve user content from the app origin (separate media domain).
+- Upload pipeline ([MEDIA_ARCHITECTURE.md](MEDIA_ARCHITECTURE.md)): server-proxied uploads for documents/avatars/chat images with size, extension, magic-number checks, image re-encoding (strips EXIF GPS), malware scan before storage, server-chosen random public IDs; signed direct uploads for galleries/videos with every parameter signed and size verified server-side after upload; user content is served from the media domain, never the app origin.
 - CSRF: not applicable to bearer-token APIs; web apps store tokens per [PUBLIC_WEBSITE.md](../frontend/PUBLIC_WEBSITE.md) (httpOnly secure cookies via BFF route handlers recommended) with SameSite and CSRF tokens where cookies are used.
 - CORS: explicit origin allow-list per environment; no wildcard with credentials.
 - Security headers: CSP (nonce-based), `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, frame-ancestors none.
@@ -124,6 +126,7 @@ Requires validation by qualified local counsel before launch (all `[LEGAL]`):
 7. Consumer-protection rules: cancellation/refund disclosures, price display, review authenticity.
 8. Electronic communications rules for SMS/marketing consent.
 9. Minors' data and age restrictions.
+10. (L-18) Use of Cloudinary and its sub-processors for identity and business documents: DPA, storage region (US by default; EU only on Enterprise per provider documentation), retention after deletion, backup settings.
 
 ## 11. Incident response
 

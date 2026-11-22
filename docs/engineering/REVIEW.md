@@ -25,6 +25,9 @@ For agent-authored work, the agent performs a structured self-review against thi
 - [ ] Module boundaries respected; no new dependency outside [MODULAR_ARCHITECTURE.md](../architecture/MODULAR_ARCHITECTURE.md) §4; no cycles; no cross-module table access.
 - [ ] Layering respected: no business logic in controllers; repositories in infrastructure; transactions in application services.
 - [ ] No duplicated business logic; no unnecessary abstraction; file and method sizes reasonable; single responsibility.
+- [ ] ADR-48 structure rules, for production **and test** code: one responsibility per class and file; controllers, services, DTOs, entities, exceptions, error codes, validators and configuration are separate; fixtures, test configuration and test utilities are not inside tests; no unrelated classes nested to save files; no copied private helpers (search before adding one).
+- [ ] A class with 7 or more constructor dependencies has been questioned (does it have more than one reason to change?); the build fails above 10.
+- [ ] No abstraction added without a second implementation, a module boundary or a test seam; no cohesive responsibility split artificially.
 - [ ] Domain events used for cross-module reactions; listeners idempotent.
 
 ### Correctness and data
@@ -43,6 +46,14 @@ For agent-authored work, the agent performs a structured self-review against thi
 - [ ] No secrets, tokens or PII in code, logs, errors or events; PII minimized.
 - [ ] Audit events emitted for privileged/financial actions.
 - [ ] No unverified legal assumption encoded; `[LEGAL]` items flagged.
+
+### Error handling, platform UI and media (mandatory standards)
+- [ ] Errors flow through the central handler/translator: no `try/catch` in controllers, no hand-built error bodies, no raw exceptions or messages shown to users; new error codes have fr + en messages ([ERROR_HANDLING.md](ERROR_HANDLING.md)).
+- [ ] No stack traces, SQL, class names or internal details in responses or UI.
+- [ ] Flutter: layer boundaries respected; no Material/Cupertino imports or platform branching outside `design_system`; iOS shows only Cupertino, Android only Material; no duplicated widgets/logic.
+- [ ] Next.js: feature structure respected; shared components reused; no raw `fetch` outside `api-client`; no `any`; files small; loading/error/empty/success states present.
+- [ ] Media: provider SDK confined to `media.infrastructure`; no secrets in frontends; uploads server-authorized with server-side validation; deletion/replacement/cleanup handled; private media only via short-lived signed URLs.
+- [ ] Standards enforcement still passes ([STANDARDS_ENFORCEMENT.md](STANDARDS_ENFORCEMENT.md)); a rule is never relaxed without an ADR.
 
 ### Quality
 - [ ] Tests written first and meaningful (behavior, edge cases, failure modes); no tests tailored to pass trivially; no skipped tests.

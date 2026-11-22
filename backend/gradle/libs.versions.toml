@@ -3,9 +3,11 @@ spring-boot = "4.1.2"
 spring-modulith = "2.1.2"
 spotless = "8.10.4"
 archunit = "1.5.1"
+bouncycastle = "1.86"
 
 [libraries]
 spring-modulith-bom = { module = "org.springframework.modulith:spring-modulith-bom", version.ref = "spring-modulith" }
+bouncycastle-prov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
 archunit-junit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archunit" }
 
 [plugins]

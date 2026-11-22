@@ -6,7 +6,7 @@ Stack: Java 21 + Spring Boot + Spring Modulith (modular monolith), PostgreSQL, R
 
 ## Current phase
 
-Documentation is approved with decisions ADR-13 (approve-then-pay) and ADR-20 (non-custodial funds flow) recorded. **Phase 0 (backend foundation) is implemented but not yet approved; Phase 1 is blocked until the user approves Phase 0.** Booking, payments, subscriptions and all frontends are NOT started** and must not be started until the user approves a roadmap phase (`docs/product/ROADMAP.md`). No live payment transaction may ever run before legal item L-1 is closed, and no payment provider is selected (OD-18).
+Documentation is approved with decisions ADR-13 (approve-then-pay) and ADR-20 (non-custodial funds flow) recorded. **Phase 0 (backend foundation) is approved. Phase 1 is in progress, slice by slice (A identity and audit, B organizations and staff, C verification, D catalog, E room types and units, F media); Slice A (identity and audit) is implemented and awaiting review; each slice is reported before the next starts (see `docs/superpowers/plans/2026-11-02-phase1-slice-a-identity-audit-plan.md`).** Booking, payments, subscriptions and all frontends are NOT started** and must not be started until the user approves a roadmap phase (`docs/product/ROADMAP.md`). On 2026-11-22 the user approved starting the foundation work in `docs/engineering/DEVELOPMENT_PROCESS.md` (documentation, 280-line enforcement, shared value objects, country-scoped admin permissions, `platformconfig`, the RLS spike, then the web workspace, design system and deployment readiness); feature screens and Phase 2 remain not started. No live payment transaction may ever run before legal item L-1 is closed, and no payment provider is selected (OD-18).
 
 ## Documentation map (read before changing anything)
 
@@ -27,7 +27,17 @@ Documentation is approved with decisions ADR-13 (approve-then-pay) and ADR-20 (n
 | i18n / multi-country | `docs/architecture/INTERNATIONALIZATION.md` |
 | Frontends and design system | `docs/frontend/*` |
 | Engineering rules | `docs/engineering/*` (`CODING_STANDARDS.md`, `TESTING_STRATEGY.md`, `REVIEW.md`, …) |
+| Error handling (all tiers) | `docs/engineering/ERROR_HANDLING.md` |
+| Enforcement of every mandatory rule | `docs/engineering/STANDARDS_ENFORCEMENT.md` |
+| Media / Cloudinary | `docs/architecture/MEDIA_ARCHITECTURE.md` |
+| Flutter architecture and native UI | `docs/frontend/CUSTOMER_MOBILE.md` §2–§3 |
+| Next.js architecture (3 web apps) | `docs/frontend/WEB_ARCHITECTURE.md` |
 | Decisions and open questions | `docs/DECISIONS.md`, `docs/OPEN_DECISIONS.md` |
+| Multi-country model, governing-country matrix, commission, cross-border | `docs/architecture/MULTI_COUNTRY.md` |
+| Tenancy and RLS gate | `docs/architecture/TENANCY.md` |
+| API contract sharing (OpenAPI) | `docs/architecture/API_CONTRACTS.md` |
+| Railway deployment, DNS, backups, cost | `docs/engineering/RAILWAY_DEPLOYMENT.md`, `docs/engineering/RUNBOOKS.md` |
+| Work order, gates, definition of done | `docs/engineering/DEVELOPMENT_PROCESS.md` |
 
 ## How Claude must work
 
@@ -43,7 +53,7 @@ Documentation is approved with decisions ADR-13 (approve-then-pay) and ADR-20 (n
 
 ## Non-negotiable engineering rules
 
-- Clean Architecture, DDD, SOLID; explicit module ownership; single responsibility per file; keep files focused (≤ ~300 lines) and methods short.
+- Clean Architecture, DDD, SOLID; explicit module ownership; single responsibility per file; a source file must never exceed 280 lines (hard limit, ADR-43) and methods stay short.
 - **Module boundaries:** use other modules only through their `api` package; no cross-module table access; **no circular dependencies**; any new dependency must be added to the graph in `MODULAR_ARCHITECTURE.md` §4 in the same change.
 - **Layering:** `web` → `application` → `domain` ← `infrastructure`. No business logic in controllers. Repository interfaces in `domain`, implementations in `infrastructure`. Transactions in `application` only.
 - Critical workflows (booking creation, payment confirmation, refunds, cancellation, subscription state) are transactional; side effects (notifications, provider calls) go through the transactional outbox/after-commit and must never roll back bookings or payments.
@@ -60,13 +70,34 @@ Documentation is approved with decisions ADR-13 (approve-then-pay) and ADR-20 (n
 - i18n: no user-visible hardcoded strings; French is default, English supported; every template/message exists in both.
 - **No AI attribution in project files** (code, docs, README, config). Commit message trailers are governed by the user's/tooling's configured attribution instructions only.
 
+## Mandatory engineering standards (permanent; apply to all phases)
+
+**Centralized error handling** (`docs/engineering/ERROR_HANDLING.md`)
+- Backend: all API errors are RFC 9457 problem+json built only by `ApiExceptionHandler`/`ProblemFactory`. Throw specific `ZellaStayException` subclasses carrying a module-namespaced `ErrorCode` enum constant; add its French and English messages. Controllers never use `try/catch` or `@ExceptionHandler`; adapters translate third-party failures at the boundary. Never expose stack traces, class names, SQL, constraint names, secrets or rejected values. Every response and log line carries the `requestId`.
+- Flutter: failures are translated once in `core/network` into the shared `Failure` model; features never touch Dio/HTTP exceptions; errors render through the shared widgets.
+- Next.js: all network calls go through `packages/api-client` with typed errors; use shared `ErrorState`/`EmptyState`/loading components and error boundaries; never show raw error messages.
+
+**Flutter** (`docs/frontend/CUSTOMER_MOBILE.md`)
+- Clean Architecture per feature (`domain` pure Dart, `data`, `di`, `presentation`); Riverpod for state and DI; no feature-to-feature imports; presentation never imports data.
+- One responsibility per class and file; files ≤ 280 lines; strict DRY — search `shared/` and `design_system` before creating a widget; extract reusable widgets/providers/models/repositories/services into their folders.
+- **Native UI is non-negotiable:** iOS = Cupertino only, Android = Material only, never mixed. All platform-specific UI and any `Platform`/`defaultTargetPlatform` branching live in `design_system` (`ios/` imports Cupertino only, `android/` Material only). Features import neither `material.dart` nor `cupertino.dart`.
+
+**Next.js** (`docs/frontend/WEB_ARCHITECTURE.md`)
+- Feature-oriented (`features/<f>/{ui,hooks,services,api,schemas,types}`); reuse `packages/ui`, `packages/api-client`, `packages/schemas`; no duplicated components, API logic, validation or business logic; strict TypeScript, no `any`/`@ts-ignore`; files ≤ 280 lines; apps never import each other; every data view has loading, error, empty and success states.
+
+**Media / Cloudinary** (`docs/architecture/MEDIA_ARCHITECTURE.md`)
+- Only the `media` module (`media.infrastructure`) may use the Cloudinary SDK; other modules use `MediaApi` and `MediaAssetId`. Store public IDs and metadata in PostgreSQL, never binaries. Uploads are server-authorized and server-validated (signed direct upload for galleries/videos, server-proxied for documents/avatars/chat images); sizes are verified server-side. Private files use authenticated delivery with short-lived signed URLs and audit. Never put the API secret in any frontend. Replace by new asset then delete; clean up orphans. Do not build document upload before the OD-29 spike and L-18.
+
+**Enforcement** (`docs/engineering/STANDARDS_ENFORCEMENT.md`)
+- Every rule above has an automated check or a stated review item. Run `./gradlew build` (backend, includes architecture and error tests); when scaffolding an app, activate its "Planned" rows (lint and boundary rules). Never weaken or skip a check; relaxing a rule requires an ADR.
+
 ## Scope boundaries
 
-Four independent frontends (`apps/customer-mobile`, `apps/public-web`, `apps/vendor-dashboard`, `apps/admin-dashboard`) and one backend (`backend/`). Shared web code lives in `packages/`. These directories are created in roadmap Phase 0, not before.
+Four independent frontends (`client/` Flutter; `web/website`, `web/vendor`, `web/admin` Next.js, ADR-44/ADR-45) and one backend (`backend/`). Shared web code lives in `packages/`; the committed API contract lives in `contracts/openapi/` once the pipeline exists (ADR-46). Currently only unmodified scaffolds exist for the frontends.
 
 ## Commands
 
-Backend (from `backend/`; Docker must be running for Testcontainers): `./gradlew build` (format check + compile + all tests + JaCoCo), `./gradlew spotlessApply` (format), `./gradlew test --tests '<pattern>'`. Docs check from the repo root: `python3 -I infra/scripts/check-docs.py`. Local stack and run script: `docs/engineering/DEVOPS.md` §12. Add commands for each frontend here when it is scaffolded.
+Backend (from `backend/`; Docker must be running for Testcontainers): `./gradlew build` (format check + compile + all tests + JaCoCo), `./gradlew spotlessApply` (format), `./gradlew test --tests '<pattern>'`. Docs check from the repo root: `python3 -I infra/tools/check-docs.py`. Local stack and run script: `docs/engineering/DEVOPS.md` §12. Add commands for each frontend here when it is scaffolded.
 
 When adding a module dependency: edit `docs/architecture/MODULAR_ARCHITECTURE.md` §4 **and** the module's `package-info.java` `allowedDependencies`; `ModuleStructureTest` fails if they differ. When adding or changing a domain event, update `docs/architecture/EVENT_CATALOG.md`.
 

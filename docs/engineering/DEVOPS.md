@@ -2,19 +2,17 @@
 
 ## 1. Principles
 
-12-factor configuration, immutable artifacts, infrastructure as code, least privilege, reproducible environments, cloud-provider portability. Cloud provider, region and hosting model are undecided `[OD-15]` (may be constrained by data residency `[LEGAL]` and latency to Gabon).
+12-factor configuration, immutable artifacts, infrastructure as code, least privilege, reproducible environments, cloud-provider portability. Railway is the initial deployment platform (ADR-47, [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md)). Region and data residency remain open `[OD-15]` (data residency `[LEGAL]`, latency to Gabon). Wherever this document says cloud secret manager, CDN or managed service, read the Railway equivalent in that document; on Railway secrets are sealed variables, not mounted files.
 
 ## 2. Repository layout (target)
 
 ```
 zellastay/
   backend/                    Spring Boot modular monolith (single deployable)
-  apps/
-    customer-mobile/          Flutter
-    public-web/               Next.js
-    vendor-dashboard/         Next.js
-    admin-dashboard/          Next.js
-  packages/                   Shared web packages (ui, api-client, design-tokens, config, i18n-utils)
+  client/                     Flutter (ADR-45)
+  web/                        website, vendor, admin: Next.js (ADR-44)
+  packages/                   Shared web packages (ui, design-tokens, icons, utilities, api-client, config)
+  contracts/openapi/          Committed OpenAPI contract (ADR-46)
   infra/                      IaC (Terraform or equivalent), Helm/Kustomize or compose manifests, runbooks
   docs/
   .github/workflows/
@@ -27,7 +25,7 @@ Monorepo, path-filtered CI. Decision recorded in [DECISIONS.md](../DECISIONS.md)
 
 | Env | Purpose | Data |
 |---|---|---|
-| local | Developer machines via Docker Compose (PostgreSQL, Redis, object storage emulator, mail catcher; Kafka only when introduced) | Synthetic via test tooling only |
+| local | Developer machines via Docker Compose (PostgreSQL, Redis, mail catcher; Kafka only when introduced; media is a dedicated Cloudinary development environment or a fake `MediaStorage` in tests, no emulator) | Synthetic via test tooling only |
 | ci | Ephemeral per pipeline run | Synthetic |
 | preview | Per-PR web previews (optional) | Synthetic |
 | staging | Production-like; provider sandboxes | Synthetic/anonymized; never raw production dumps |
@@ -57,7 +55,7 @@ Secret manager of chosen cloud; injected at runtime as env vars or mounted files
 
 - PostgreSQL: managed service with PITR, automated backups, encryption, restore drills (quarterly), RPO/RTO from `[OD-14]`, monitored replication lag, connection pooling (HikariCP in app; PgBouncer if needed), autovacuum tuning for hot tables (`inv_availability`), partition maintenance jobs for audit/outbox archive.
 - Redis: managed, persistence not required for correctness; eviction policy and memory alarms.
-- Object storage: versioning for documents, lifecycle rules, separate public/private buckets, CDN for public media only.
+- Media: Cloudinary environments per stage with separate credentials; folder prefix per environment; backups disabled or purge procedure defined for private documents; delete with CDN invalidation ([MEDIA_ARCHITECTURE.md](../architecture/MEDIA_ARCHITECTURE.md)).
 - Retention jobs (chat, notification content, audit archival) run as scheduled, audited jobs.
 
 ## 8. Networking and edge
@@ -88,7 +86,7 @@ Commands (from the repository root):
 | Run the backend in a container too | `docker compose -f infra/docker/compose.yaml --env-file infra/docker/.env --profile app up -d --build` |
 | Build and test | `cd backend && ./gradlew build` (needs Docker running for Testcontainers) |
 | Format | `cd backend && ./gradlew spotlessApply` |
-| Check docs | `python3 -I infra/scripts/check-docs.py` |
+| Check docs | `python3 -I infra/tools/check-docs.py` |
 
 Host ports are configurable (`ZS_DB_HOST_PORT`, `ZS_REDIS_HOST_PORT`, `ZS_SERVER_PORT`, `ZS_MANAGEMENT_PORT`) so the stack can coexist with other local services.
 
@@ -101,5 +99,15 @@ Environment variables read by the backend (no defaults for anything secret or en
 | `ZS_REDIS_HOST`, `ZS_REDIS_PASSWORD` | host yes; password optional | Redis (`ZS_REDIS_PORT` defaults to 6379) |
 | `ZS_SERVER_PORT`, `ZS_MANAGEMENT_PORT` | no | Defaults 8080 / 8081; management port serves `/actuator/health/{liveness,readiness}` and `/actuator/prometheus` only and must not be publicly routed |
 | `ZS_SECRETS_DIR` | no | Directory of mounted secret files (default `/run/secrets/`). A file named like a variable (for example `ZS_DB_PASSWORD`) supplies that variable, via Spring `configtree:` |
+
+Identity variables (read since Slice A task A1): `ZS_IDENTITY_TOKEN_SIGNING_KEY` (secret; PKCS#8 PEM of an EC P-256 key, supply as a file under `ZS_SECRETS_DIR`), `ZS_IDENTITY_TOKEN_SIGNING_KEY_ID` (non-secret label of that key), `ZS_IDENTITY_CHALLENGE_PEPPER` (secret; keys the verification-code hash). All three are required; startup fails naming the variable. Lifetimes and thresholds are typed properties under `zellastay.identity.*` in `application.yaml` (initial baselines pending security review, overridable per environment). Locally, `infra/scripts/generate-local-secrets.sh` creates the two secret files in the git-ignored `infra/docker/secrets/` directory and `run-backend-local.sh` points `ZS_SECRETS_DIR` at it; the Compose `app` profile mounts it read-only at `/run/secrets`.
+
+Further identity variables (Slice A): `ZS_IDENTITY_MFA_ENCRYPTION_KEY` (secret; 32 random bytes, Base64; encrypts authenticator seeds), `ZS_IDENTITY_MFA_ENCRYPTION_KEY_ID` (label). Optional first-admin bootstrap: set `ZS_IDENTITY_BOOTSTRAP_ENABLED=true`, `ZS_IDENTITY_BOOTSTRAP_ADMIN_EMAIL` and the secret `ZS_IDENTITY_BOOTSTRAP_ADMIN_PASSWORD` for one start-up; it creates a Super Admin only when no administrator exists (who must then enrol an authenticator), is audited, and should be switched off afterwards. Rate limits are `zellastay.rate-limit.{auth,api}.{requests,window}`; the client address comes from `X-Forwarded-For`, so the backend must be reachable only through a proxy that overwrites that header (R-18).
+
+Audit: `zellastay.audit.partitions-ahead` and `zellastay.audit.maintenance-cron` configure the partition job. In deployed environments run Flyway migrations with an owner role and the application with a separate role granted only `SELECT` and `INSERT` on `audit_event` (the trigger is the safeguard that also works with a single role, as in local development and CI).
+
+Startup also fails before any bean is created, naming every missing required setting (`ZS_ENVIRONMENT`, `ZS_DB_URL`, `ZS_DB_USER`, `ZS_DB_PASSWORD`, `ZS_REDIS_HOST`).
+
+Planned variables (added when the media module is implemented, not read yet): `ZS_CLOUDINARY_CLOUD_NAME` (public), `ZS_CLOUDINARY_API_KEY`, `ZS_CLOUDINARY_API_SECRET` (secret; backend only, preferably via `ZS_SECRETS_DIR`).
 
 Secret management rules: values never appear in the repository, images, compose files or logs; locally they come from the git-ignored `infra/docker/.env`; in deployed environments from the cloud secret manager, injected either as environment variables or as files under `ZS_SECRETS_DIR` (preferred, because files are not visible through process listings). Tests generate throwaway credentials for ephemeral containers at runtime.

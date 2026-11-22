@@ -22,14 +22,14 @@ Nothing here may be silently decided by implementers. Resolve by updating the re
 | OD-7 | Penalties/ranking impact for vendor-initiated cancellations | Full refund to guest; penalty rules TBD | Phase 2 |
 | OD-8 | Location privacy for private homes (approximate vs exact until confirmed) | Approximate until `CONFIRMED` | Phase 1 (catalog) |
 | OD-9 | Identity model: one person across customer/vendor/admin contexts; membership in several organizations; custom vendor roles | Distinct account kinds per audience; fixed five vendor roles; multiple memberships allowed | Phase 1 |
-| OD-10 | Build identity in-house vs adopt external IdP | In-house `identity` module behind API | Phase 0 |
+| OD-10 | ~~Build identity in-house vs adopt external IdP~~ **Decided: in-house** (ADR-30) | In-house `identity` module behind API | Closed |
 | OD-11 | Pricing rule scope at launch (weekday, length-of-stay, per-guest supplements, closed-to-arrival, min/max stay, extra-bed fees) | Season, weekday, date override, min/max stay, per-guest supplements | Phase 2 |
 | OD-12 | iCal / channel-manager synchronization | Post-launch | Future |
 | OD-13 | Scope of vendor-created campaigns and platform rules (max discount, stacking, funding) | Within plan entitlement; one code per booking | Phase 4 |
 | OD-14 | Quantified SLOs, p95 latency targets, availability, RPO/RTO, mutation-score targets, performance budgets | None set | Phase 2 exit |
-| OD-15 | Cloud provider, region, hosting model for web apps, admin network restriction; data residency | Cloud-agnostic containers | Phase 0 |
-| OD-16 | Cross-border bookings, display-currency conversion | Out of scope at launch | Phase 5 |
-| OD-17 | Hash-chained / WORM audit log | Append-only privileges; hash chain optional | Phase 1 |
+| OD-15 | ~~Cloud provider and hosting model~~ **Decided: Railway** (ADR-47). **Still open:** Railway region (latency to Gabon), data residency (L-6), admin network restriction | Region unselected; residency unvalidated | Before production |
+| OD-16 | ~~Cross-border bookings~~ **Decided: allowed** (ADR-37). **Still open:** display-currency conversion | Out of scope; no automatic conversion | Phase 5 |
+| OD-17 | Hash-chained / WORM audit log. Slice A ships append-only storage without hash chaining (ADR-32); revisit before public launch | Append-only privileges; hash chain optional | Before launch |
 | OD-18 | **Payment provider selection** (card PSP, Airtel/Moov route, marketplace collection + settlement provider). Not selected. Research and C1–C15 capability checklist in [PAYMENT_PROVIDER_RESEARCH.md](architecture/PAYMENT_PROVIDER_RESEARCH.md); main gaps: split/vendor settlement undocumented, Moov Gabon unconfirmed, refunds undocumented for some candidates | None selected; provider-neutral core built against a simulator | Phase 2 (live adapters) |
 | OD-19 | Room assignment timing (at booking vs later); selling entire property and parts simultaneously | Type-level booking, assignment later; composite blocking supported | Phase 2 |
 | OD-20 | Email/SMS/push providers per country | Unselected | Phase 1 (notification) |
@@ -39,7 +39,18 @@ Nothing here may be silently decided by implementers. Resolve by updating the re
 | OD-24 | Certificate pinning in mobile app | Not at launch | Phase 2 |
 | OD-25 | Maps / geocoding provider | Abstraction required | Phase 1 |
 | OD-6a | Booking timer values (vendor response window, payment windows per method, in-flight payment grace, auto-complete grace). **Decided:** the values are product-configurable platform parameters (per country, overridable per payment method), never code constants. **Pending:** the final values, to be supplied by product | None in code; startup/feature enablement fails if a required timer is unset | Phase 2 |
-| OD-26 | Brand identity (palette, typography, logo), dark mode scope | Placeholder tokens | Phase 1 |
+| OD-29 | **Cloudinary verification spike (Phase 1, before any upload feature ships):** (a) authenticated delivery and signed expiring URLs for PDFs/scans (documentation covers images and videos only; raw files unconfirmed); (b) malware scanning for documents (own scanner in the server-proxied path vs the provider's paid add-on, pricing unknown); (c) restricting arbitrary unsigned transformations; (d) backup/purge behavior on delete; (e) plan limits (asset sizes, API rate limits, add-ons) against expected volumes; (f) whether re-typing an asset from `authenticated` to `upload` is possible when a property is published; (g) EU/other data location (Enterprise only per documentation) | Design assumes all positive; fallbacks listed in MEDIA_ARCHITECTURE §4 | Phase 1 |
+| OD-30 | Media limits per kind: maximum file sizes, image dimensions, video duration/size, maximum photos/videos per property per plan tier (ties to subscription entitlements), allowed formats review | Initial formats in MEDIA_ARCHITECTURE §2; no numeric limits assumed | Phase 1 |
+| OD-26 | Brand identity. **Decided (ADR-44):** palette (Orange-500 primary, white, Neutral-900/600/200) and light theme first. **Still open:** typography, logo, dark mode later | Placeholder typography | Phase 1 |
+| OD-31 | Commission mechanics once a market enables it: calculation base (accommodation only or including fees and taxes), treatment on cancellation and refund, vendor-side invoicing and statements, interaction with provider split settlement (ADR-35) | Disabled everywhere; no default | Before any market enables commission |
+| OD-32 | May an organization operate properties in a country other than its legal-entity country? | Allowed only when that market is active and the property country's requirements are met | Phase 1 (organization) |
+| OD-33 | Zella Stay legal entities per country: contracting party, invoicing and numbering, tax registration | None assumed | Phase 2 |
+| OD-34 | Cross-border payments: how the payer country is determined for mobile money, who bears cross-border refund and exchange losses on card payments | Cards only across borders; losses undecided | Phase 2 |
+| OD-35 | Which markets are seeded in migrations as `DRAFT` (all four, or Gabon only) | Seed only registry facts; no market is active | Before `platformconfig` migration |
+| OD-36 | Railway topology and delivery: two projects (recommended) or one project with two environments; trunk-based flow (recommended) or a `develop` branch; GitHub-driven image deploys (recommended) or Railway-side deploys | Two projects, trunk-based, GitHub-driven | Before first deployment |
+| OD-37 | DNS and edge: registrar and DNS provider for `zellastay.org`, proxying, staging hostnames, whether admin gets its own registrable domain, whether `/api/v1/admin/**` is private-only | Flat staging hostnames; host-only cookies | Before first deployment |
+| OD-38 | Recovery targets and tooling: RPO and RTO, offsite backup target, error tracker, uptime monitor and metrics collector, budget (extends OD-14) | RPO 15 minutes, RTO 4 hours; no tools chosen | Before first deployment |
+| OD-39 | Whether UI strings shared across web and Flutter (for example `status.*`) come from one generated source | Separate catalogs with a key parity check | After the first features |
 
 ## 2. Legal / regulatory / provider validation register (`[LEGAL]`)
 
@@ -47,7 +58,7 @@ No legal or regulatory conclusion is assumed in any document. Each item needs qu
 
 | # | Topic | Affects |
 |---|---|---|
-| L-1 | **MANDATORY — blocks any live transaction.** Confirm in writing that the chosen provider holds every authorization required in Gabon to collect guest funds and settle to vendors, that the split/fee arrangement is lawful for Zella Stay as a non-custodial platform, and that Zella Stay needs no license of its own | ADR-20, payment, settlements |
+| L-1 | **MANDATORY, per launch country: blocks any live transaction in that country.** Closed separately for Gabon, Mali, Côte d'Ivoire and Senegal, each before its market can become active. Confirm in writing that the chosen provider holds every authorization required in Gabon to collect guest funds and settle to vendors, that the split/fee arrangement is lawful for Zella Stay as a non-custodial platform, and that Zella Stay needs no license of its own | ADR-20, payment, settlements |
 | L-2 | Mobile-money provider terms, capabilities (refunds, webhooks, recurring), settlement and fees | Payment adapters, OD-5, OD-18 |
 | L-3 | Card acceptance requirements, PCI scope, 3-D Secure requirements, PSP onboarding | Payment, security |
 | L-4 | Tax treatment: accommodation taxes, tourism taxes, VAT on customer service fee and on subscriptions; invoicing format and numbering; remittance responsibility | Pricing, invoices, reporting |
@@ -63,7 +74,11 @@ No legal or regulatory conclusion is assumed in any document. Each item needs qu
 | L-14 | Minors' data / age requirements | Identity |
 | L-15 | Loyalty/promotion regulation (points expiry, gift/voucher treatment, referral incentives) | Loyalty, promotion |
 | L-17 | Applicability to this product of any Gabonese requirement for payment operators to connect to a national digital aggregator (mentioned in a gaming context in one source) | Payment |
+| L-18 | Use of Cloudinary and its sub-processors for identity and business documents: DPA, storage region, retention after deletion, backups; lawful basis for third-party hosting of identity documents | Media, onboarding |
 | L-16 | Disputes/chargebacks handling obligations | Payment, support |
+| L-19 | Tax treatment of the customer service fee and of vendor commission by the customer's location versus the property's country; conversion disclosures for cross-border card payments (see L-10) | Pricing, payment, invoices |
+
+L-5, L-6, L-7 and L-12 are assessed per launch country, not once: each market has its own data-protection authority, residency, retention and vendor-document requirements.
 
 ## 3. Technical risks
 
@@ -83,4 +98,12 @@ No legal or regulatory conclusion is assumed in any document. Each item needs qu
 | R-12 | Vendor adoption/low supply at launch | Medium / High | Business risk; onboarding UX; support operations (outside engineering docs) |
 | R-13 | Data protection/retention non-compliance | Medium / High | L-5 to L-7 resolved before launch; retention jobs; privacy-by-design |
 | R-14 | Time-zone and date-boundary bugs in stays and cancellation tiers | Medium / Medium | Property-local `date` semantics, injected clock, boundary tests |
+| R-16 | Cloudinary cannot meet private-document requirements (raw/PDF authenticated delivery, malware scanning, data location) or incurs unexpected cost from uncontrolled transformations | Medium / High | OD-29 spike before building document upload; named variants only; documented fallback options in MEDIA_ARCHITECTURE §4; a new ADR if documents need a different store |
+| R-17 | The bundled password denylist (`identity/password-denylist.txt`) is a starter list, so weak passwords outside it are accepted | High / Medium | Replace with a vetted large corpus before public launch; consider an online k-anonymity breach check behind a port (security review first) |
+| R-18 | `X-Forwarded-For` is trusted for rate limiting and audit IP addresses; a backend reachable directly could be spoofed | Medium / High | Deploy only behind a proxy that overwrites the header; network policy blocks direct access ([DEVOPS.md](engineering/DEVOPS.md) section 12) |
 | R-15 | Over-engineering (premature Kafka, extra abstractions) | Medium / Medium | ADR triggers; "no unnecessary abstractions" review gate |
+| R-19 | Railway point-in-time recovery uses its own PostgreSQL image; PostGIS (ADR-6) is a separate template and may not combine with it; `btree_gist`, `pg_trgm`, `pgcrypto` unconfirmed | Medium / High | Spike before choosing the image; `earthdistance` fallback (ADR-6) |
+| R-20 | Railway `railway.toml` stops being read on 2026-12-01; the replacement's coverage of root directory, watch paths and pre-deploy command is unverified | Medium / Medium | Use `.railway/railway.ts`; spike; keep deployment steps scriptable |
+| R-21 | All `zellastay.org` hostnames are the same site, so `SameSite` does not isolate admin, vendor and website | Medium / High | Host-only `__Host-` cookies, CSRF tokens, `Origin` checks; consider a separate admin domain (OD-37) |
+| R-22 | Payment provider landscape unresearched for Mali, Côte d'Ivoire and Senegal; cross-border mobile money unlikely | High / High | Per-country provider research and L-1 before each market activates (OD-18, OD-34) |
+| R-23 | `platformconfig` remains the most depended-on module even after the ownership split | Medium / Medium | Narrow `api` snapshots, readiness SPI instead of upward dependencies, review of its fan-in |
